@@ -1,15 +1,15 @@
-from motor.motor_asyncio import AsyncClient, AsyncDatabase
+from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from config.settings import settings
 
 class Database:
-    client: AsyncClient = None
-    db: AsyncDatabase = None
+    client: AsyncIOMotorClient = None
+    db: AsyncIOMotorDatabase = None
 
 db = Database()
 
 async def connect_db():
     """Conectar a MongoDB"""
-    db.client = AsyncClient(settings.mongodb_url)
+    db.client = AsyncIOMotorClient(settings.mongodb_url)
     db.db = db.client[settings.mongodb_db]
     
     # Crear índices
@@ -26,6 +26,6 @@ async def close_db():
         db.client.close()
         print("✓ Desconectado de MongoDB")
 
-def get_database() -> AsyncDatabase:
+def get_database() -> AsyncIOMotorDatabase:
     """Obtener instancia de base de datos"""
     return db.db

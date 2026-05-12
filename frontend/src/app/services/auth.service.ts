@@ -4,6 +4,11 @@ import { Observable, BehaviorSubject } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { User, TokenResponse } from '../models';
 
+interface RefreshTokenResponse {
+  access_token: string;
+  token_type: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -38,9 +43,9 @@ export class AuthService {
   /**
    * Refrescar token
    */
-  refreshToken(): Observable<any> {
+  refreshToken(): Observable<RefreshTokenResponse> {
     const refreshToken = localStorage.getItem('refresh_token');
-    return this.http.post(`${this.apiUrl}/refresh`, { refresh_token: refreshToken }).pipe(
+    return this.http.post<RefreshTokenResponse>(`${this.apiUrl}/refresh`, { refresh_token: refreshToken }).pipe(
       tap(response => {
         localStorage.setItem('access_token', response.access_token);
         this.tokenSubject.next(response.access_token);

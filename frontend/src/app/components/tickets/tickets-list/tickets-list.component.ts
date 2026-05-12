@@ -2,9 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { TicketService } from '../../services/ticket.service';
-import { Ticket, TicketStatus } from '../../models';
-import { AuthService } from '../../services/auth.service';
+import { TicketService } from '../../../services/ticket.service';
+import { Ticket } from '../../../models';
+import { AuthService } from '../../../services/auth.service';
 
 @Component({
   selector: 'app-tickets-list',
@@ -34,12 +34,12 @@ export class TicketsListComponent implements OnInit {
   loadTickets(): void {
     this.loading = true;
     this.ticketService.getTickets().subscribe({
-      next: (tickets) => {
+      next: (tickets: Ticket[]) => {
         this.tickets = tickets;
         this.applyFilters();
         this.loading = false;
       },
-      error: (error) => {
+      error: (error: any) => {
         console.error('Error al cargar tickets:', error);
         this.loading = false;
       }
@@ -68,7 +68,7 @@ export class TicketsListComponent implements OnInit {
         next: () => {
           this.loadTickets();
         },
-        error: (error) => {
+        error: () => {
           alert('Error al eliminar el ticket');
         }
       });

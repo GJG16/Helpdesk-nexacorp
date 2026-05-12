@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, Header
+from fastapi import FastAPI, Depends, Header, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from config.settings import settings
@@ -7,6 +7,7 @@ from routes import status_router
 from routes.auth import router as auth_router
 from routes.usuarios import router as usuarios_router
 from routes.tickets import router as tickets_router
+from realtime import realtime_manager
 
 # Lifecycle events
 @asynccontextmanager
@@ -41,6 +42,18 @@ app.include_router(status_router)
 app.include_router(auth_router)
 app.include_router(usuarios_router)
 app.include_router(tickets_router)
+
+# WebSocket endpoint para tiempo real
+@app.websocket("/ws/tickets")
+async def websocket_endpoint(websocket: WebSocket):
+    """WebSocket para notificaciones en tiempo real de tickets."""
+    await realtime_manager.connect(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            # Manejar mensajes entrantes si es necesario
+    except Exception:
+        realtime_manager.disconnect(websocket)
 
 # Ruta raíz
 @app.get("/")

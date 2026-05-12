@@ -2,9 +2,9 @@ import { Component, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { RouterModule, ActivatedRoute, Router } from '@angular/router';
-import { TicketService } from '../../services/ticket.service';
-import { AuthService } from '../../services/auth.service';
-import { Ticket } from '../../models';
+import { TicketService } from '../../../services/ticket.service';
+import { AuthService } from '../../../services/auth.service';
+import { Ticket } from '../../../models';
 
 @Component({
   selector: 'app-ticket-form',
@@ -40,7 +40,7 @@ export class TicketFormComponent implements OnInit {
       if (params['id']) {
         this.isEditMode = true;
         this.ticketId = params['id'];
-        this.loadTicket(this.ticketId);
+        this.loadTicket(params['id']);
       } else {
         this.isEditMode = false;
       }
@@ -50,7 +50,7 @@ export class TicketFormComponent implements OnInit {
   loadTicket(id: string): void {
     this.loading = true;
     this.ticketService.getTicket(id).subscribe({
-      next: (ticket) => {
+      next: (ticket: Ticket) => {
         this.ticketForm.patchValue({
           titulo: ticket.titulo,
           descripcion: ticket.descripcion,
@@ -59,7 +59,7 @@ export class TicketFormComponent implements OnInit {
         });
         this.loading = false;
       },
-      error: (error) => {
+      error: () => {
         this.error = 'Error al cargar el ticket';
         this.loading = false;
       }
@@ -81,7 +81,7 @@ export class TicketFormComponent implements OnInit {
         next: () => {
           this.router.navigate(['/tickets']);
         },
-        error: (error) => {
+        error: (error: any) => {
           this.error = error.error?.detail || 'Error al actualizar el ticket';
           this.loading = false;
         }
@@ -96,7 +96,7 @@ export class TicketFormComponent implements OnInit {
         next: () => {
           this.router.navigate(['/tickets']);
         },
-        error: (error) => {
+        error: (error: any) => {
           this.error = error.error?.detail || 'Error al crear el ticket';
           this.loading = false;
         }

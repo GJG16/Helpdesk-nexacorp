@@ -39,3 +39,18 @@ export interface TicketFilter {
 export type TicketStatus = 'abierto' | 'en_progreso' | 'resuelto' | 'cerrado';
 export type Priority = 'baja' | 'media' | 'alta' | 'critica';
 
+export interface TicketStats {
+  total: number;
+  abiertos: number;
+  en_progreso: number;
+  resueltos: number;
+  cerrados: number;
+}
+
+export interface TicketPageResponse {
+  items: Ticket[];
+  total: number;
+  page: number;
+  page_size: number;
+  total_pages: number;
+}

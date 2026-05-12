@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Ticket, TicketFilter } from '../models';
+import { Ticket, TicketFilter, TicketStats, TicketPageResponse } from '../models';
 
 @Injectable({
   providedIn: 'root'
@@ -58,5 +58,21 @@ export class TicketService {
    */
   getStatus(): Observable<any> {
     return this.http.get(`${this.apiUrl}/status`);
+  }
+
+  /**
+   * Obtener estadísticas de tickets
+   */
+  getTicketStats(): Observable<TicketStats> {
+    return this.http.get<TicketStats>(`${this.apiUrl}/tickets/stats`);
+  }
+
+  /**
+   * Obtener tickets paginados
+   */
+  getTicketsPaginated(page: number = 1, pageSize: number = 10): Observable<TicketPageResponse> {
+    return this.http.get<TicketPageResponse>(
+      `${this.apiUrl}/tickets/paginated?page=${page}&page_size=${pageSize}`
+    );
   }
 }

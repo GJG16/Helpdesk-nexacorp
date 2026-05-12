@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from typing import Optional
+
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 from models.schemas import User, UserCreate, UserUpdate
 from database import get_database
 from security import decode_token, hash_password
@@ -7,15 +9,27 @@ from bson.objectid import ObjectId
 
 router = APIRouter(prefix="/api/usuarios", tags=["usuarios"])
 
-async def get_current_user(token: str = None, db=Depends(get_database)):
-    """Obtener usuario actual del token"""
-    if not token:
+def _extract_token(authorization: Optional[str], token: Optional[str]) -> Optional[str]:
+    if authorization and authorization.startswith("Bearer "):
+        return authorization.split(" ", 1)[1]
+    return token
+
+
+async def get_current_user(
+    authorization: Optional[str] = Header(default=None),
+    token: Optional[str] = None,
+    db=Depends(get_database),
+):
+    """Obtener usuario actual del token."""
+    raw_token = _extract_token(authorization, token)
+
+    if not raw_token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="No autorizado"
         )
     
-    token_data = decode_token(token)
+    token_data = decode_token(raw_token)
     if not token_data:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
