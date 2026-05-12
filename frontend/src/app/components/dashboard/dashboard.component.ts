@@ -3,7 +3,9 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { TicketService } from '../../services/ticket.service';
-import { User, Ticket } from '../../models';
+import { User, Ticket, TicketStats, TicketPageResponse } from '../../models';
+import { catchError } from 'rxjs/operators';
+import { forkJoin, of } from 'rxjs';
 
 @Component({
   selector: 'app-dashboard',
@@ -16,11 +18,12 @@ export class DashboardComponent implements OnInit {
   currentUser: User | null = null;
   tickets: Ticket[] = [];
   loading = true;
-  stats = {
+  stats: TicketStats = {
     total: 0,
     abiertos: 0,
     en_progreso: 0,
-    resueltos: 0
+    resueltos: 0,
+    cerrados: 0
   };
 
   constructor(
@@ -37,24 +40,30 @@ export class DashboardComponent implements OnInit {
 
   loadDashboard(): void {
     this.loading = true;
-    this.ticketService.getTickets().subscribe({
-      next: (tickets) => {
-        this.tickets = tickets.slice(0, 5); // Últimos 5 tickets
-        this.calculateStats(tickets);
+    forkJoin({
+      stats: this.ticketService.getTicketStats().pipe(
+        catchError((error) => {
+          console.error('Error al cargar estadísticas:', error);
+          return of({ total: 0, abiertos: 0, en_progreso: 0, resueltos: 0, cerrados: 0 });
+        })
+      ),
+      recent: this.ticketService.getTicketsPaginated(1, 5).pipe(
+        catchError((error) => {
+          console.error('Error al cargar tickets recientes:', error);
+          return of({ items: [], total: 0, page: 1, page_size: 5, total_pages: 1 } as TicketPageResponse);
+        })
+      )
+    }).subscribe({
+      next: ({ stats, recent }) => {
+        this.stats = stats;
+        this.tickets = recent.items;
         this.loading = false;
       },
       error: (error) => {
-        console.error('Error al cargar tickets:', error);
+        console.error('Error al cargar dashboard:', error);
         this.loading = false;
       }
     });
-  }
-
-  calculateStats(tickets: Ticket[]): void {
-    this.stats.total = tickets.length;
-    this.stats.abiertos = tickets.filter(t => t.estado === 'abierto').length;
-    this.stats.en_progreso = tickets.filter(t => t.estado === 'en_progreso').length;
-    this.stats.resueltos = tickets.filter(t => t.estado === 'resuelto').length;
   }
 
   logout(): void {

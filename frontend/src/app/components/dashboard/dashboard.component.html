@@ -1,43 +1,119 @@
-<div class="dashboard">
-  <nav class="navbar">
-    <div class="navbar-content">
-      <h1 class="navbar-title">🎟️ Helpdesk</h1>
-      <div class="navbar-menu">
-        <button (click)="navigateTo('/usuarios')" class="btn-nav">Usuarios</button>
-        <button (click)="navigateTo('/tickets')" class="btn-nav">Tickets</button>
-        <span class="user-info">{{ currentUser?.nombre }}</span>
-        <button (click)="logout()" class="btn-logout">Logout</button>
-      </div>
-    </div>
-  </nav>
-
-  <div class="dashboard-content">
-    <h2>Bienvenido, {{ currentUser?.nombre }}</h2>
-
-    <div class="stats-grid">
-      <div class="stat-card">
-        <h3>Total Tickets</h3>
-        <p class="stat-value">{{ stats.total }}</p>
-      </div>
-      <div class="stat-card">
-        <h3>Abiertos</h3>
-        <p class="stat-value abiertos">{{ stats.abiertos }}</p>
-      </div>
-      <div class="stat-card">
-        <h3>En Progreso</h3>
-        <p class="stat-value en-progreso">{{ stats.en_progreso }}</p>
-      </div>
-      <div class="stat-card">
-        <h3>Resueltos</h3>
-        <p class="stat-value resueltos">{{ stats.resueltos }}</p>
+<div class="workspace-shell">
+  <aside class="side-rail">
+    <div class="brand-block">
+      <div class="brand-mark">N</div>
+      <div>
+        <p class="brand-name">NexaCorp</p>
+        <p class="brand-subtitle">Service Desk</p>
       </div>
     </div>
 
-    <div class="recent-tickets">
-      <h3>Tickets Recientes</h3>
-      <div *ngIf="loading" class="loading">Cargando...</div>
-      <div *ngIf="!loading && tickets.length > 0" class="tickets-table">
-        <table>
+    <nav class="rail-nav">
+      <button class="nav-item active">Resumen</button>
+      <button (click)="navigateTo('/tickets')" class="nav-item">Tickets</button>
+      <button (click)="navigateTo('/tickets/new')" class="nav-item">Nuevo ticket</button>
+    </nav>
+
+    <div class="user-card">
+      <span class="user-role">{{ currentUser?.rol }}</span>
+      <strong>{{ currentUser?.nombre }}</strong>
+      <p>{{ currentUser?.email }}</p>
+      <button (click)="logout()" class="btn-ghost">Cerrar sesión</button>
+    </div>
+  </aside>
+
+  <main class="workspace-main">
+    <header class="hero-panel">
+      <div>
+        <p class="eyebrow">Control center</p>
+        <h2>Bienvenido, {{ currentUser?.nombre }}</h2>
+        <p class="hero-copy">
+          Vista ejecutiva del estado operativo. Desde aquí puedes seguir la carga, abrir tickets y revisar la actividad reciente.
+        </p>
+      </div>
+
+      <div class="hero-metrics">
+        <div>
+          <span>Tickets totales</span>
+          <strong>{{ stats.total }}</strong>
+        </div>
+        <div>
+          <span>Abiertos</span>
+          <strong>{{ stats.abiertos }}</strong>
+        </div>
+        <div>
+          <span>En progreso</span>
+          <strong>{{ stats.en_progreso }}</strong>
+        </div>
+      </div>
+    </header>
+
+    <section class="stats-grid">
+      <article class="stat-card stat-total">
+        <p>Tickets totales</p>
+        <strong>{{ stats.total }}</strong>
+        <span>Base operativa completa</span>
+      </article>
+      <article class="stat-card stat-open">
+        <p>Abiertos</p>
+        <strong>{{ stats.abiertos }}</strong>
+        <span>Requieren atención</span>
+      </article>
+      <article class="stat-card stat-progress">
+        <p>En progreso</p>
+        <strong>{{ stats.en_progreso }}</strong>
+        <span>En ejecución activa</span>
+      </article>
+      <article class="stat-card stat-done">
+        <p>Resueltos</p>
+        <strong>{{ stats.resueltos }}</strong>
+        <span>Casos cerrados con éxito</span>
+      </article>
+    </section>
+
+    <section class="insight-grid">
+      <article class="insight-card">
+        <div class="insight-header">
+          <h3>Estado del sistema</h3>
+          <span class="pill success">Operativo</span>
+        </div>
+        <div class="progress-list">
+          <div>
+            <div class="progress-meta"><span>Disponibilidad</span><strong>99.98%</strong></div>
+            <div class="progress-bar"><span style="width: 99%"></span></div>
+          </div>
+          <div>
+            <div class="progress-meta"><span>Tiempo de respuesta</span><strong>Óptimo</strong></div>
+            <div class="progress-bar accent"><span style="width: 82%"></span></div>
+          </div>
+        </div>
+      </article>
+
+      <article class="insight-card action-card">
+        <div class="insight-header">
+          <h3>Acciones rápidas</h3>
+          <span class="pill neutral">Ambos roles</span>
+        </div>
+        <div class="action-stack">
+          <button (click)="navigateTo('/tickets/new')" class="action-btn primary">Crear ticket</button>
+          <button (click)="navigateTo('/tickets')" class="action-btn secondary">Ver bandeja</button>
+        </div>
+      </article>
+    </section>
+
+    <section class="table-panel">
+      <div class="panel-header">
+        <div>
+          <h3>Actividad reciente</h3>
+          <p>Los últimos tickets registrados en el sistema.</p>
+        </div>
+        <button (click)="navigateTo('/tickets')" class="link-action">Abrir bandeja completa</button>
+      </div>
+
+      <div *ngIf="loading" class="loading-state">Cargando actividad...</div>
+
+      <div *ngIf="!loading && tickets.length > 0" class="table-wrap">
+        <table class="data-table">
           <thead>
             <tr>
               <th>ID</th>
@@ -48,9 +124,9 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let ticket of tickets" [attr.data-estado]="ticket.estado">
-              <td>#{{ ticket.id?.substring(0, 6) }}</td>
-              <td>{{ ticket.titulo }}</td>
+            <tr *ngFor="let ticket of tickets">
+              <td class="mono">#{{ ticket.id?.substring(0, 6) }}</td>
+              <td class="title-cell">{{ ticket.titulo }}</td>
               <td><span class="badge" [attr.data-state]="ticket.estado">{{ ticket.estado }}</span></td>
               <td><span class="badge" [attr.data-priority]="ticket.prioridad">{{ ticket.prioridad }}</span></td>
               <td>{{ ticket.fecha_creacion | date: 'short' }}</td>
@@ -58,9 +134,10 @@
           </tbody>
         </table>
       </div>
+
       <div *ngIf="!loading && tickets.length === 0" class="empty-state">
-        No hay tickets disponibles
+        No hay tickets disponibles todavía.
       </div>
-    </div>
-  </div>
+    </section>
+  </main>
 </div>

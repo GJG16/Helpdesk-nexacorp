@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, ChangeDetectorRef, NgZone, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -20,30 +20,73 @@ export class TicketsListComponent implements OnInit {
   filterEstado = '';
   filterPrioridad = '';
   searchTerm = '';
+  currentPage = 1;
+  pageSize = 8;
+  totalTickets = 0;
+  totalPages = 1;
 
   constructor(
     private ticketService: TicketService,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private ngZone: NgZone,
+    private changeDetectorRef: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
     this.loadTickets();
   }
 
-  loadTickets(): void {
+  async loadTickets(page: number = this.currentPage): Promise<void> {
     this.loading = true;
-    this.ticketService.getTickets().subscribe({
-      next: (tickets: Ticket[]) => {
-        this.tickets = tickets;
-        this.applyFilters();
-        this.loading = false;
-      },
-      error: (error: any) => {
-        console.error('Error al cargar tickets:', error);
-        this.loading = false;
+    this.currentPage = page;
+
+    try {
+      const token = localStorage.getItem('access_token');
+      const response = await fetch(
+        `http://localhost:8000/api/tickets/paginated?page=${page}&page_size=${this.pageSize}`,
+        {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
       }
-    });
+
+      const data = await response.json();
+      const normalizedTickets = Array.isArray(data)
+        ? data
+        : Array.isArray(data?.items)
+          ? data.items
+          : [];
+
+      this.ngZone.run(() => {
+        this.tickets = normalizedTickets;
+        this.totalTickets = Array.isArray(data) ? normalizedTickets.length : data.total ?? normalizedTickets.length;
+        this.currentPage = Array.isArray(data) ? page : data.page;
+        this.pageSize = Array.isArray(data) ? this.pageSize : data.page_size;
+        this.totalPages = Array.isArray(data)
+          ? Math.max(1, Math.ceil(this.totalTickets / this.pageSize))
+          : data.total_pages;
+        this.applyFilters();
+        this.changeDetectorRef.detectChanges();
+      });
+    } catch (error) {
+      console.error('Error inesperado al cargar tickets:', error);
+      this.ngZone.run(() => {
+        this.tickets = [];
+        this.filteredTickets = [];
+        this.totalTickets = 0;
+        this.totalPages = 1;
+        this.changeDetectorRef.detectChanges();
+      });
+    } finally {
+      this.ngZone.run(() => {
+        this.loading = false;
+        this.changeDetectorRef.detectChanges();
+      });
+    }
   }
 
   applyFilters(): void {
@@ -59,6 +102,27 @@ export class TicketsListComponent implements OnInit {
 
   onFilterChange(): void {
     this.applyFilters();
+  }
+
+  goToPage(page: number): void {
+    if (page < 1 || page > this.totalPages || page === this.currentPage) {
+      return;
+    }
+
+    this.loadTickets(page);
+  }
+
+  getPageNumbers(): number[] {
+    const total = this.totalPages;
+    const start = Math.max(1, this.currentPage - 2);
+    const end = Math.min(total, start + 4);
+    const pages: number[] = [];
+
+    for (let page = start; page <= end; page++) {
+      pages.push(page);
+    }
+
+    return pages;
   }
 
   deleteTicket(id: string | undefined): void {

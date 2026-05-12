@@ -1,35 +1,55 @@
-<div class="tickets-container">
-  <nav class="navbar">
-    <div class="navbar-content">
-      <h1 class="navbar-title">🎟️ Helpdesk - Tickets</h1>
-      <div class="navbar-menu">
-        <button (click)="navigateToDashboard()" class="btn-nav">Dashboard</button>
-        <button (click)="logout()" class="btn-logout">Logout</button>
+<div class="workspace-shell">
+  <aside class="side-rail">
+    <div class="brand-block">
+      <div class="brand-mark">N</div>
+      <div>
+        <p class="brand-name">NexaCorp</p>
+        <p class="brand-subtitle">Ticket board</p>
       </div>
     </div>
-  </nav>
 
-  <div class="tickets-content">
-    <div class="tickets-header">
-      <h2>Gestión de Tickets</h2>
-      <button (click)="createTicket()" class="btn-create">+ Nuevo Ticket</button>
+    <nav class="rail-nav">
+      <button (click)="navigateToDashboard()" class="nav-item">Resumen</button>
+      <button class="nav-item active">Tickets</button>
+      <button (click)="createTicket()" class="nav-item">Nuevo ticket</button>
+    </nav>
+
+    <div class="user-card">
+      <span class="user-role">Operación</span>
+      <strong>Flujo de trabajo</strong>
+      <p>{{ filteredTickets.length }} visibles de {{ totalTickets }} totales</p>
+      <button (click)="logout()" class="btn-ghost">Cerrar sesión</button>
     </div>
+  </aside>
 
-    <div class="filters">
+  <main class="workspace-main">
+    <header class="hero-panel compact">
+      <div>
+        <p class="eyebrow">Ticket management</p>
+        <h2>Gestión de tickets</h2>
+        <p class="hero-copy">Bandeja operativa con filtros rápidos, paginación y acciones directas para mantener el flujo limpio.</p>
+      </div>
+
+      <div class="hero-actions">
+        <button (click)="createTicket()" class="action-btn primary">+ Nuevo ticket</button>
+      </div>
+    </header>
+
+    <section class="filters-panel">
       <div class="filter-group">
-        <label for="searchTerm">Buscar:</label>
+        <label for="searchTerm">Buscar</label>
         <input 
           type="text" 
           id="searchTerm" 
           [(ngModel)]="searchTerm" 
           (input)="onFilterChange()"
-          placeholder="Buscar por título..."
+          placeholder="Título o palabra clave"
           class="filter-input"
         />
       </div>
 
       <div class="filter-group">
-        <label for="filterEstado">Estado:</label>
+        <label for="filterEstado">Estado</label>
         <select 
           id="filterEstado" 
           [(ngModel)]="filterEstado" 
@@ -38,14 +58,14 @@
         >
           <option value="">Todos</option>
           <option value="abierto">Abierto</option>
-          <option value="en_progreso">En Progreso</option>
+          <option value="en_progreso">En progreso</option>
           <option value="resuelto">Resuelto</option>
           <option value="cerrado">Cerrado</option>
         </select>
       </div>
 
       <div class="filter-group">
-        <label for="filterPrioridad">Prioridad:</label>
+        <label for="filterPrioridad">Prioridad</label>
         <select 
           id="filterPrioridad" 
           [(ngModel)]="filterPrioridad" 
@@ -59,45 +79,60 @@
           <option value="critica">Crítica</option>
         </select>
       </div>
-    </div>
+    </section>
 
-    <div *ngIf="loading" class="loading">
-      Cargando tickets...
-    </div>
+    <section class="table-panel">
+      <div class="panel-header">
+        <div>
+          <h3>Cola actual</h3>
+          <p>Página {{ currentPage }} de {{ totalPages }}.</p>
+        </div>
 
-    <div *ngIf="!loading && filteredTickets.length > 0" class="tickets-table">
-      <table>
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Título</th>
-            <th>Descripción</th>
-            <th>Estado</th>
-            <th>Prioridad</th>
-            <th>Creado</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let ticket of filteredTickets">
-            <td>#{{ ticket.id?.substring(0, 6) }}</td>
-            <td class="title">{{ ticket.titulo }}</td>
-            <td class="description">{{ ticket.descripcion | slice:0:50 }}...</td>
-            <td><span class="badge" [attr.data-state]="ticket.estado">{{ ticket.estado }}</span></td>
-            <td><span class="badge" [attr.data-priority]="ticket.prioridad">{{ ticket.prioridad }}</span></td>
-            <td>{{ ticket.fecha_creacion | date: 'short' }}</td>
-            <td class="actions">
-              <button (click)="editTicket(ticket.id)" class="btn-small btn-edit">Editar</button>
-              <button (click)="deleteTicket(ticket.id)" class="btn-small btn-delete">Eliminar</button>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+        <span class="pill neutral">{{ filteredTickets.length }} resultados</span>
+      </div>
 
-    <div *ngIf="!loading && filteredTickets.length === 0" class="empty-state">
-      <p>No hay tickets que coincidan con los filtros</p>
-      <button (click)="createTicket()" class="btn-create">Crear primer ticket</button>
-    </div>
-  </div>
+      <div *ngIf="loading" class="loading-state">Actualizando bandeja...</div>
+
+      <div *ngIf="filteredTickets.length > 0" class="table-wrap">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Título</th>
+              <th>Descripción</th>
+              <th>Estado</th>
+              <th>Prioridad</th>
+              <th>Creado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let ticket of filteredTickets">
+              <td class="mono">#{{ ticket.id?.substring(0, 6) }}</td>
+              <td class="title-cell">{{ ticket.titulo }}</td>
+              <td class="description-cell">{{ ticket.descripcion | slice:0:70 }}...</td>
+              <td><span class="badge" [attr.data-state]="ticket.estado">{{ ticket.estado }}</span></td>
+              <td><span class="badge" [attr.data-priority]="ticket.prioridad">{{ ticket.prioridad }}</span></td>
+              <td>{{ ticket.fecha_creacion | date: 'short' }}</td>
+              <td class="actions">
+                <button (click)="editTicket(ticket.id)" class="btn-small btn-edit">Editar</button>
+                <button (click)="deleteTicket(ticket.id)" class="btn-small btn-delete">Eliminar</button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div *ngIf="filteredTickets.length === 0" class="empty-state">
+        <p>No hay tickets que coincidan con los filtros</p>
+        <button (click)="createTicket()" class="action-btn primary">Crear primer ticket</button>
+      </div>
+
+      <div class="pagination-bar" *ngIf="totalPages > 1">
+        <button class="pager-btn" (click)="goToPage(currentPage - 1)" [disabled]="currentPage === 1">Anterior</button>
+        <button class="pager-btn" *ngFor="let page of getPageNumbers()" [class.active]="page === currentPage" (click)="goToPage(page)">{{ page }}</button>
+        <button class="pager-btn" (click)="goToPage(currentPage + 1)" [disabled]="currentPage === totalPages">Siguiente</button>
+      </div>
+    </section>
+  </main>
 </div>
