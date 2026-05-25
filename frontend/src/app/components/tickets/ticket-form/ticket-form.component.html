@@ -55,10 +55,11 @@
         <div class="form-group">
           <label for="estado">Estado *</label>
           <select
-            id="estado"
-            formControlName="estado"
-            [class.is-invalid]="f['estado'].invalid && f['estado'].touched"
-          >
+              id="estado"
+              data-testid="select-estado"
+              formControlName="estado"
+              [class.is-invalid]="f['estado'].invalid && f['estado'].touched"
+            >
             <option value="abierto">Abierto</option>
             <option value="en_progreso">En Progreso</option>
             <option value="resuelto">Resuelto</option>
@@ -76,7 +77,7 @@
       </div>
 
       <div class="form-actions">
-        <button type="submit" class="btn btn-primary" [disabled]="loading || ticketForm.disabled">
+        <button type="submit" data-testid="form-submit" class="btn btn-primary" [disabled]="loading || ticketForm.disabled">
           {{ loading ? 'Guardando...' : 'Actualizar' }}
         </button>
         <button type="button" class="btn btn-secondary" (click)="cancel()">

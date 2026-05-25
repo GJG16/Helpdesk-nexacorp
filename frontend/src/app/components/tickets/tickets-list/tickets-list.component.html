@@ -4,10 +4,10 @@
       <p class="eyebrow">Tablero operativo</p>
       <h1>Tickets</h1>
     </div>
-    <div class="topbar-actions">
+      <div class="topbar-actions">
       <button (click)="navigateToDashboard()" class="btn-ghost">Dashboard</button>
       <button *ngIf="isAgent() || isAdmin()" (click)="goToKanban()" class="btn-ghost">Kanban</button>
-      <button (click)="isModalOpen = true" class="btn-create">+ Nuevo Ticket</button>
+      <button (click)="isModalOpen = true" class="btn-create" data-testid="btn-create-ticket">+ Nuevo Ticket</button>
       <button (click)="logout()" class="btn-logout">Logout</button>
     </div>
   </div>
@@ -80,7 +80,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let ticket of filteredTickets">
+            <tr *ngFor="let ticket of filteredTickets" [attr.data-ticket-id]="ticket.id">
               <td>#{{ ticket.id?.substring(0, 6) }}</td>
               <td class="title">{{ ticket.titulo }}</td>
               <td class="description">{{ ticket.descripcion | slice:0:50 }}...</td>
@@ -90,7 +90,7 @@
               <td>{{ ticket.asignado_a ? ticket.asignado_a.substring(0, 6) : 'Sin asignar' }}</td>
               <td class="actions">
                 <button *ngIf="canSelfAssign(ticket)" (click)="assignToMe(ticket)" class="btn-small btn-assign">Asignarme</button>
-                <button *ngIf="canEditTicket(ticket)" (click)="editTicket(ticket.id)" class="btn-small btn-edit">Editar</button>
+                <button *ngIf="canEditTicket(ticket)" (click)="editTicket(ticket.id)" class="btn-small btn-edit" [attr.data-testid]="'edit-'+ticket.id">Editar</button>
                 <button *ngIf="canDeleteTicket(ticket)" (click)="deleteTicket(ticket.id)" class="btn-small btn-delete">Eliminar</button>
               </td>
             </tr>
