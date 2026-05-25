@@ -237,6 +237,13 @@ async def update_ticket(ticket_id: str, ticket_update: TicketUpdate, db=Depends(
         update_data["fecha_actualizacion"] = datetime.utcnow()
 
         if ticket_update.estado in (TicketStatus.RESUELTO, TicketStatus.CERRADO):
+            if ticket_update.estado == TicketStatus.RESUELTO and _is_agent(current_user):
+                comentarios = await db.comments.find({"ticket_id": ticket_id, "usuario_id": current_user.get("id")}).to_list(None)
+                if not comentarios:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Debes añadir un comentario o nota de resolución antes de marcar el ticket como resuelto."
+                    )
             update_data["fecha_resolucion"] = datetime.utcnow()
 
         await db.tickets.update_one({"_id": ObjectId(ticket_id)}, {"$set": update_data})
