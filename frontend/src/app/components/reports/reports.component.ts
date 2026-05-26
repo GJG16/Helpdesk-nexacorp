@@ -3,23 +3,8 @@ import { Component, OnInit } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { TicketService } from '../../services/ticket.service';
-import { AuditLog } from '../../models';
+import { AuditLog, TicketReport } from '../../models';
 
-interface TicketReportByState {
-  estado: string;
-  total: number;
-}
-
-interface TicketReportByAgent {
-  asignado_a: string;
-  total: number;
-}
-
-interface TicketReport {
-  total_tickets: number;
-  by_state: TicketReportByState[];
-  by_agent: TicketReportByAgent[];
-}
 
 @Component({
   selector: 'app-reports',

@@ -33,12 +33,20 @@ export class DashboardComponent implements OnInit {
     private ticketService: TicketService,
     private router: Router
   ) {
-    this.currentUser = this.authService.getCurrentUser();
-    this.currentRole = this.authService.getCurrentRole();
+    // Esperar al observable de usuario en ngOnInit para asegurar token cargado
   }
 
   ngOnInit(): void {
-    this.loadDashboard();
+    this.authService.currentUser$.subscribe(user => {
+      this.currentUser = user;
+      this.currentRole = user?.rol ?? null;
+      if (user) {
+        this.loadDashboard();
+      } else {
+        this.tickets = [];
+        this.loading = false;
+      }
+    });
   }
 
   loadDashboard(): void {

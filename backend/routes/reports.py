@@ -1,9 +1,9 @@
 from bson.objectid import ObjectId
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 
-from database import get_database
-from models.schemas import AuditAction, AuditLog, TicketReport
-from routes.usuarios import get_current_user
+from backend.database import get_database
+from backend.models.schemas import AuditAction, AuditLog, TicketReport
+from backend.routes.usuarios import get_current_user
 
 router = APIRouter(prefix="/api/reports", tags=["reports"])
 

@@ -1,13 +1,13 @@
-from fastapi import FastAPI, Depends, Header
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from config.settings import settings
-from database import connect_db, close_db, get_database
-from routes import status_router
-from routes.auth import router as auth_router
-from routes.usuarios import router as usuarios_router
-from routes.tickets import router as tickets_router
-from routes.reports import router as reports_router
+from backend.config.settings import settings
+from backend.database import connect_db, close_db, get_database
+from backend.routes import status_router
+from backend.routes.auth import router as auth_router
+from backend.routes.usuarios import router as usuarios_router
+from backend.routes.tickets import router as tickets_router
+from backend.routes.reports import router as reports_router
 
 # Lifecycle events
 @asynccontextmanager
@@ -56,7 +56,7 @@ async def root():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
-        "main:app",
+           "backend.main:app",
         host=settings.server_host,
         port=settings.server_port,
         reload=settings.debug

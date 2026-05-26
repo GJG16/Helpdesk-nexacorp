@@ -103,9 +103,6 @@ export class KanbanComponent implements OnInit {
     }
 
     const payload: Partial<Ticket> = { estado: targetState };
-    if (this.authService.isAgent() && ticket.asignado_a !== this.currentUser?.id) {
-      payload.asignado_a = this.currentUser?.id;
-    }
 
     this.ticketService.updateTicket(ticket.id, payload).subscribe({
       next: () => this.loadTickets(),

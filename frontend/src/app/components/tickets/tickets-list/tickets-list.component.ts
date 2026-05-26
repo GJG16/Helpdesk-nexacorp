@@ -29,11 +29,21 @@ export class TicketsListComponent implements OnInit {
     private authService: AuthService,
     private router: Router
   ) {
-    this.currentUser = this.authService.getCurrentUser();
+    // No solicitar user síncronamente; escuchamos el observable en ngOnInit
   }
 
   ngOnInit(): void {
-    this.loadTickets();
+    this.authService.currentUser$.subscribe(user => {
+      this.currentUser = user;
+      if (user) {
+        this.loadTickets();
+      } else {
+        // Si no hay usuario, limpiar lista
+        this.tickets = [];
+        this.filteredTickets = [];
+        this.loading = false;
+      }
+    });
   }
 
   loadTickets(): void {
