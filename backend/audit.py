@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 async def log_deletion(db, *, action: str, resource_type: str, resource_id: str, actor_admin_id: str) -> None:
@@ -9,6 +9,6 @@ async def log_deletion(db, *, action: str, resource_type: str, resource_id: str,
 			"resource_type": resource_type,
 			"resource_id": resource_id,
 			"actor_admin_id": actor_admin_id,
-			"created_at": datetime.utcnow(),
+			"created_at": datetime.now(timezone.utc),
 		}
 	)

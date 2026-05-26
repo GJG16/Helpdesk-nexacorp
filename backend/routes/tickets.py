@@ -4,10 +4,19 @@ from typing import List, Optional
 from bson.objectid import ObjectId
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 
-from database import get_database
-from models.schemas import Ticket, TicketCreate, TicketFilter, TicketStatus, TicketUpdate
-from audit import log_deletion
-from security import decode_token
+from backend.database import get_database
+from backend.models.schemas import (
+    Ticket,
+    TicketCreate,
+    TicketComment,
+    TicketCommentCreate,
+    TicketFilter,
+    TicketStatus,
+    TicketUpdate,
+    Priority,
+)
+from backend.audit import log_deletion
+from backend.security import decode_token
 
 router = APIRouter(prefix="/api/tickets", tags=["tickets"])
 
@@ -110,13 +119,20 @@ async def get_ticket(ticket_id: str, db=Depends(get_database), current_user=Depe
 @router.post("/", response_model=Ticket)
 async def create_ticket(ticket_data: TicketCreate, db=Depends(get_database), current_user=Depends(get_current_user)):
     """Crear nuevo ticket"""
-    ticket_dict = ticket_data.dict()
-    if not _is_admin(current_user):
-        ticket_dict["usuario_id"] = current_user.get("id")
+    # Los administradores no deben crear tickets desde la UI
+    if _is_admin(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Los administradores no pueden crear tickets",
+        )
+
+    ticket_dict = ticket_data.model_dump()
+    # El ticket siempre se asocia al usuario que lo crea
+    ticket_dict["usuario_id"] = current_user.get("id")
 
     # Forzar prioridad media para usuarios finales independientemente de lo que envíen
     if current_user.get("rol") == "user":
-        ticket_dict["prioridad"] = TicketStatus.MEDIA if hasattr(TicketStatus, 'MEDIA') else "media" # Priority.MEDIA
+        ticket_dict["prioridad"] = Priority.MEDIA.value
 
     ticket_dict["fecha_creacion"] = datetime.utcnow()
     ticket_dict["fecha_actualizacion"] = datetime.utcnow()
@@ -128,7 +144,7 @@ async def create_ticket(ticket_data: TicketCreate, db=Depends(get_database), cur
 
     return created_ticket
 
-from models.schemas import TicketComment, TicketCommentCreate
+
 
 @router.get("/{ticket_id}/comments", response_model=List[TicketComment])
 async def get_ticket_comments(ticket_id: str, db=Depends(get_database), current_user=Depends(get_current_user)):
@@ -164,7 +180,7 @@ async def create_ticket_comment(ticket_id: str, comment_data: TicketCommentCreat
         if not (_is_admin(current_user) or _is_agent(current_user) or _is_ticket_owner(ticket, current_user)):
             raise HTTPException(status_code=403, detail="No tienes permiso para comentar en este ticket")
 
-        comment_dict = comment_data.dict()
+        comment_dict = comment_data.model_dump()
         comment_dict["ticket_id"] = ticket_id
         comment_dict["usuario_id"] = current_user.get("id")
         comment_dict["nombre_autor"] = current_user.get("nombre")
@@ -196,7 +212,7 @@ async def update_ticket(ticket_id: str, ticket_update: TicketUpdate, db=Depends(
                 detail="Ticket no encontrado",
             )
 
-        update_data = {k: v for k, v in ticket_update.dict().items() if v is not None}
+        update_data = {k: v for k, v in ticket_update.model_dump().items() if v is not None}
 
         if _is_admin(current_user):
             pass

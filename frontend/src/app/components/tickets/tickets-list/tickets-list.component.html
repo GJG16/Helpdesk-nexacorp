@@ -6,9 +6,14 @@
     </div>
     <div class="topbar-actions">
       <button (click)="navigateToDashboard()" class="btn-ghost">Dashboard</button>
+<<<<<<< Updated upstream
       <button *ngIf="isAgent() || isAdmin()" (click)="goToKanban()" class="btn-ghost">Kanban</button>
       <button (click)="isModalOpen = true" class="btn-create">+ Nuevo Ticket</button>
       <button (click)="logout()" class="btn-logout">Logout</button>
+=======
+      <button *ngIf="isAgent()" (click)="goToKanban()" class="btn-ghost">Kanban</button>
+      <button *ngIf="isAgent() || isUser()" (click)="isModalOpen = true" class="btn-create" data-testid="btn-create-ticket">+ Nuevo Ticket</button>
+>>>>>>> Stashed changes
     </div>
   </div>
 

@@ -3,10 +3,10 @@ from typing import List, Optional
 from bson.objectid import ObjectId
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 
-from database import get_database
-from models.schemas import User, UserUpdate
-from audit import log_deletion
-from security import decode_token, hash_password
+from backend.database import get_database
+from backend.models.schemas import User, UserUpdate
+from backend.audit import log_deletion
+from backend.security import decode_token, hash_password
 
 router = APIRouter(prefix="/api/usuarios", tags=["usuarios"])
 
@@ -51,6 +51,12 @@ async def get_current_user(
         )
 
     return _serialize_user(user)
+
+
+@router.get("/perfil/me", response_model=User)
+async def get_perfil(current_user=Depends(get_current_user)):
+    """Obtener perfil del usuario actual"""
+    return current_user
 
 
 @router.get("/", response_model=List[User])
@@ -103,7 +109,11 @@ async def update_usuario(usuario_id: str, user_update: UserUpdate, db=Depends(ge
         )
 
     try:
-        update_data = {k: v for k, v in user_update.dict().items() if v is not None}
+        update_data = {k: v for k, v in user_update.model_dump().items() if v is not None}
+
+        # Hashear contraseña si se está actualizando
+        if "password" in update_data:
+            update_data["password_hash"] = hash_password(update_data.pop("password"))
 
         if current_user.get("rol") != "admin":
             update_data.pop("rol", None)
@@ -176,8 +186,3 @@ async def delete_usuario(usuario_id: str, db=Depends(get_database), current_user
             detail=str(e),
         )
 
-
-@router.get("/perfil/me", response_model=User)
-async def get_perfil(current_user=Depends(get_current_user)):
-    """Obtener perfil del usuario actual"""
-    return current_user

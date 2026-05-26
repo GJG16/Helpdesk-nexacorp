@@ -1,8 +1,8 @@
 import pytest
 from fastapi.testclient import TestClient
-from main import app
-from security import hash_password
-from database import db as database_instance
+from backend.main import app
+from backend.security import hash_password
+from backend.database import db as database_instance
 import asyncio
 from uuid import uuid4
 
