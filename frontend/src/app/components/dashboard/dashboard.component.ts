@@ -3,22 +3,24 @@ import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
 import { TicketService } from '../../services/ticket.service';
-import { User, Ticket, TicketStats, TicketPageResponse } from '../../models';
-import { catchError } from 'rxjs/operators';
-import { forkJoin, of } from 'rxjs';
+import { User, Ticket } from '../../models';
+
+import { TicketCreateModalComponent } from '../tickets/ticket-create-modal/ticket-create-modal.component';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, TicketCreateModalComponent],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
 export class DashboardComponent implements OnInit {
+  isModalOpen = false;
   currentUser: User | null = null;
   tickets: Ticket[] = [];
   loading = true;
-  stats: TicketStats = {
+  currentRole: User['rol'] | null = null;
+  stats = {
     total: 0,
     abiertos: 0,
     en_progreso: 0,
@@ -31,39 +33,43 @@ export class DashboardComponent implements OnInit {
     private ticketService: TicketService,
     private router: Router
   ) {
-    this.currentUser = this.authService.getCurrentUser();
+    // Esperar al observable de usuario en ngOnInit para asegurar token cargado
   }
 
   ngOnInit(): void {
-    this.loadDashboard();
+    this.authService.currentUser$.subscribe(user => {
+      this.currentUser = user;
+      this.currentRole = user?.rol ?? null;
+      if (user) {
+        this.loadDashboard();
+      } else {
+        this.tickets = [];
+        this.loading = false;
+      }
+    });
   }
 
   loadDashboard(): void {
     this.loading = true;
-    forkJoin({
-      stats: this.ticketService.getTicketStats().pipe(
-        catchError((error) => {
-          console.error('Error al cargar estadísticas:', error);
-          return of({ total: 0, abiertos: 0, en_progreso: 0, resueltos: 0, cerrados: 0 });
-        })
-      ),
-      recent: this.ticketService.getTicketsPaginated(1, 5).pipe(
-        catchError((error) => {
-          console.error('Error al cargar tickets recientes:', error);
-          return of({ items: [], total: 0, page: 1, page_size: 5, total_pages: 1 } as TicketPageResponse);
-        })
-      )
-    }).subscribe({
-      next: ({ stats, recent }) => {
-        this.stats = stats;
-        this.tickets = recent.items;
+    this.ticketService.getTickets().subscribe({
+      next: (tickets) => {
+        this.tickets = tickets.slice(0, 5); // Últimos 5 tickets
+        this.calculateStats(tickets);
         this.loading = false;
       },
       error: (error) => {
-        console.error('Error al cargar dashboard:', error);
+        console.error('Error al cargar tickets:', error);
         this.loading = false;
       }
     });
+  }
+
+  calculateStats(tickets: Ticket[]): void {
+    this.stats.total = tickets.length;
+    this.stats.abiertos = tickets.filter(t => t.estado === 'abierto').length;
+    this.stats.en_progreso = tickets.filter(t => t.estado === 'en_progreso').length;
+    this.stats.resueltos = tickets.filter(t => t.estado === 'resuelto').length;
+    this.stats.cerrados = tickets.filter(t => t.estado === 'cerrado').length;
   }
 
   logout(): void {
@@ -73,5 +79,17 @@ export class DashboardComponent implements OnInit {
 
   navigateTo(path: string): void {
     this.router.navigate([path]);
+  }
+
+  isAdmin(): boolean {
+    return this.authService.isAdmin();
+  }
+
+  isAgent(): boolean {
+    return this.authService.isAgent();
+  }
+
+  isUser(): boolean {
+    return this.authService.isUser();
   }
 }

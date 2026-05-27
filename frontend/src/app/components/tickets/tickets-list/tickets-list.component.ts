@@ -1,128 +1,89 @@
-import { Component, ChangeDetectorRef, NgZone, OnInit } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TicketService } from '../../../services/ticket.service';
-import { Ticket } from '../../../models';
+import { Ticket, TicketStatus, User } from '../../../models';
 import { AuthService } from '../../../services/auth.service';
+import { TicketCreateModalComponent } from '../ticket-create-modal/ticket-create-modal.component';
 
 @Component({
   selector: 'app-tickets-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule],
+  imports: [CommonModule, RouterModule, FormsModule, TicketCreateModalComponent],
   templateUrl: './tickets-list.component.html',
   styleUrls: ['./tickets-list.component.css']
 })
 export class TicketsListComponent implements OnInit {
+  isModalOpen = false;
   tickets: Ticket[] = [];
   filteredTickets: Ticket[] = [];
   loading = true;
   filterEstado = '';
   filterPrioridad = '';
   searchTerm = '';
-  currentPage = 1;
-  pageSize = 8;
-  totalTickets = 0;
-  totalPages = 1;
+  currentUser: User | null = null;
 
   constructor(
     private ticketService: TicketService,
     private authService: AuthService,
-    private router: Router,
-    private ngZone: NgZone,
-    private changeDetectorRef: ChangeDetectorRef
-  ) {}
-
-  ngOnInit(): void {
-    this.loadTickets();
+    private router: Router
+  ) {
+    // No solicitar user síncronamente; escuchamos el observable en ngOnInit
   }
 
-  async loadTickets(page: number = this.currentPage): Promise<void> {
-    this.loading = true;
-    this.currentPage = page;
-
-    try {
-      const token = localStorage.getItem('access_token');
-      const response = await fetch(
-        `http://localhost:8000/api/tickets/paginated?page=${page}&page_size=${this.pageSize}`,
-        {
-          headers: token ? { Authorization: `Bearer ${token}` } : {}
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
-      const data = await response.json();
-      const normalizedTickets = Array.isArray(data)
-        ? data
-        : Array.isArray(data?.items)
-          ? data.items
-          : [];
-
-      this.ngZone.run(() => {
-        this.tickets = normalizedTickets;
-        this.totalTickets = Array.isArray(data) ? normalizedTickets.length : data.total ?? normalizedTickets.length;
-        this.currentPage = Array.isArray(data) ? page : data.page;
-        this.pageSize = Array.isArray(data) ? this.pageSize : data.page_size;
-        this.totalPages = Array.isArray(data)
-          ? Math.max(1, Math.ceil(this.totalTickets / this.pageSize))
-          : data.total_pages;
-        this.applyFilters();
-        this.changeDetectorRef.detectChanges();
-      });
-    } catch (error) {
-      console.error('Error inesperado al cargar tickets:', error);
-      this.ngZone.run(() => {
+  ngOnInit(): void {
+    this.authService.currentUser$.subscribe(user => {
+      this.currentUser = user;
+      if (user) {
+        this.loadTickets();
+      } else {
+        // Si no hay usuario, limpiar lista
         this.tickets = [];
         this.filteredTickets = [];
-        this.totalTickets = 0;
-        this.totalPages = 1;
-        this.changeDetectorRef.detectChanges();
-      });
-    } finally {
-      this.ngZone.run(() => {
         this.loading = false;
-        this.changeDetectorRef.detectChanges();
-      });
-    }
+      }
+    });
+  }
+
+  loadTickets(): void {
+    this.loading = true;
+    this.ticketService.getTickets().subscribe({
+      next: (tickets) => {
+        this.tickets = tickets;
+        this.applyFilters();
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error al cargar tickets:', error);
+        this.loading = false;
+      }
+    });
   }
 
   applyFilters(): void {
-    this.filteredTickets = this.tickets.filter(ticket => {
-      const matchEstado = !this.filterEstado || ticket.estado === this.filterEstado;
-      const matchPrioridad = !this.filterPrioridad || ticket.prioridad === this.filterPrioridad;
-      const matchSearch = !this.searchTerm || 
-        ticket.titulo.toLowerCase().includes(this.searchTerm.toLowerCase());
-      
-      return matchEstado && matchPrioridad && matchSearch;
-    });
+    try {
+      if (!this.tickets || !Array.isArray(this.tickets)) {
+        this.filteredTickets = [];
+        return;
+      }
+      this.filteredTickets = this.tickets.filter(ticket => {
+        const matchEstado = !this.filterEstado || ticket.estado === this.filterEstado;
+        const matchPrioridad = !this.filterPrioridad || ticket.prioridad === this.filterPrioridad;
+        const tituloSeguro = ticket.titulo || '';
+        const matchSearch = !this.searchTerm || 
+          tituloSeguro.toLowerCase().includes(this.searchTerm.toLowerCase());
+        
+        return matchEstado && matchPrioridad && matchSearch;
+      });
+    } catch (e) {
+      console.error('Error aplicando filtros:', e);
+      this.filteredTickets = [];
+    }
   }
 
   onFilterChange(): void {
     this.applyFilters();
-  }
-
-  goToPage(page: number): void {
-    if (page < 1 || page > this.totalPages || page === this.currentPage) {
-      return;
-    }
-
-    this.loadTickets(page);
-  }
-
-  getPageNumbers(): number[] {
-    const total = this.totalPages;
-    const start = Math.max(1, this.currentPage - 2);
-    const end = Math.min(total, start + 4);
-    const pages: number[] = [];
-
-    for (let page = start; page <= end; page++) {
-      pages.push(page);
-    }
-
-    return pages;
   }
 
   deleteTicket(id: string | undefined): void {
@@ -132,11 +93,44 @@ export class TicketsListComponent implements OnInit {
         next: () => {
           this.loadTickets();
         },
-        error: () => {
+        error: (error) => {
           alert('Error al eliminar el ticket');
         }
       });
     }
+  }
+
+  assignToMe(ticket: Ticket): void {
+    if (!ticket.id || !this.currentUser?.id) return;
+
+    this.ticketService.updateTicket(ticket.id, { asignado_a: this.currentUser.id }).subscribe({
+      next: () => this.loadTickets(),
+      error: () => alert('No fue posible asignar el ticket')
+    });
+  }
+
+  canEditTicket(ticket: Ticket): boolean {
+    if (!this.currentUser) {
+      return false;
+    }
+
+    if (this.authService.isAdmin()) {
+      return true;
+    }
+
+    if (this.authService.isAgent()) {
+      return ticket.asignado_a === this.currentUser.id;
+    }
+
+    return ticket.usuario_id === this.currentUser.id;
+  }
+
+  canDeleteTicket(ticket: Ticket): boolean {
+    return this.authService.isAdmin();
+  }
+
+  canSelfAssign(ticket: Ticket): boolean {
+    return !!this.currentUser && this.authService.isAgent() && ticket.asignado_a !== this.currentUser.id;
   }
 
   editTicket(id: string | undefined): void {
@@ -156,5 +150,21 @@ export class TicketsListComponent implements OnInit {
   logout(): void {
     this.authService.logout();
     this.router.navigate(['/login']);
+  }
+
+  isAdmin(): boolean {
+    return this.authService.isAdmin();
+  }
+
+  isAgent(): boolean {
+    return this.authService.isAgent();
+  }
+
+  isUser(): boolean {
+    return this.authService.isUser();
+  }
+
+  goToKanban(): void {
+    this.router.navigate(['/tickets/kanban']);
   }
 }

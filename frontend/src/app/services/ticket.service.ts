@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Ticket, TicketFilter, TicketStats, TicketPageResponse } from '../models';
+import { AuditLog, Ticket, TicketFilter, TicketReport, TicketComment } from '../models';
 
 @Injectable({
   providedIn: 'root'
@@ -15,7 +15,7 @@ export class TicketService {
    * Obtener todos los tickets
    */
   getTickets(): Observable<Ticket[]> {
-    return this.http.get<Ticket[]>(`${this.apiUrl}/tickets`);
+    return this.http.get<Ticket[]>(`${this.apiUrl}/tickets/`);
   }
 
   /**
@@ -29,7 +29,7 @@ export class TicketService {
    * Crear un nuevo ticket
    */
   createTicket(ticket: Omit<Ticket, 'id' | 'fecha_creacion'>): Observable<Ticket> {
-    return this.http.post<Ticket>(`${this.apiUrl}/tickets`, ticket);
+    return this.http.post<Ticket>(`${this.apiUrl}/tickets/`, ticket);
   }
 
   /**
@@ -54,6 +54,20 @@ export class TicketService {
   }
 
   /**
+   * Obtener reporte administrativo de tickets
+   */
+  getTicketReports(): Observable<TicketReport> {
+    return this.http.get<TicketReport>(`${this.apiUrl}/reports/tickets`);
+  }
+
+  /**
+   * Obtener feed reciente de auditoría
+   */
+  getAuditLogs(limit = 10): Observable<AuditLog[]> {
+    return this.http.get<AuditLog[]>(`${this.apiUrl}/reports/audit?limit=${limit}`);
+  }
+
+  /**
    * Obtener estado del servidor
    */
   getStatus(): Observable<any> {
@@ -61,18 +75,16 @@ export class TicketService {
   }
 
   /**
-   * Obtener estadísticas de tickets
+   * Obtener comentarios de un ticket
    */
-  getTicketStats(): Observable<TicketStats> {
-    return this.http.get<TicketStats>(`${this.apiUrl}/tickets/stats`);
+  getComments(ticketId: string): Observable<TicketComment[]> {
+    return this.http.get<TicketComment[]>(`${this.apiUrl}/tickets/${ticketId}/comments`);
   }
 
   /**
-   * Obtener tickets paginados
+   * Agregar un comentario a un ticket
    */
-  getTicketsPaginated(page: number = 1, pageSize: number = 10): Observable<TicketPageResponse> {
-    return this.http.get<TicketPageResponse>(
-      `${this.apiUrl}/tickets/paginated?page=${page}&page_size=${pageSize}`
-    );
+  addComment(ticketId: string, texto: string): Observable<TicketComment> {
+    return this.http.post<TicketComment>(`${this.apiUrl}/tickets/${ticketId}/comments`, { texto });
   }
 }

@@ -39,18 +39,40 @@ export interface TicketFilter {
 export type TicketStatus = 'abierto' | 'en_progreso' | 'resuelto' | 'cerrado';
 export type Priority = 'baja' | 'media' | 'alta' | 'critica';
 
-export interface TicketStats {
-  total: number;
-  abiertos: number;
-  en_progreso: number;
-  resueltos: number;
-  cerrados: number;
+export interface AuditLog {
+  id?: string;
+  action: 'delete_user' | 'delete_ticket';
+  resource_type: 'user' | 'ticket';
+  resource_id: string;
+  actor_admin_id: string;
+  actor_admin_nombre?: string;
+  resource_label?: string;
+  created_at?: Date;
 }
 
-export interface TicketPageResponse {
-  items: Ticket[];
+export interface TicketReportByState {
+  estado: TicketStatus;
   total: number;
-  page: number;
-  page_size: number;
-  total_pages: number;
 }
+
+export interface TicketReportByAgent {
+  asignado_a: string;
+  total: number;
+}
+
+export interface TicketReport {
+  total_tickets: number;
+  by_state: TicketReportByState[];
+  by_agent: TicketReportByAgent[];
+}
+
+export interface TicketComment {
+  id?: string;
+  ticket_id: string;
+  usuario_id: string;
+  texto: string;
+  nombre_autor?: string;
+  rol_autor?: string;
+  fecha_creacion?: Date;
+}
+

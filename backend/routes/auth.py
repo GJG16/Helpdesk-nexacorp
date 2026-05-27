@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from datetime import timedelta
-from models.schemas import LoginRequest, TokenResponse, User, UserCreate
-from database import get_database
-from security import (
+from datetime import datetime, timedelta
+from backend.models.schemas import LoginRequest, TokenResponse, User, UserCreate
+from backend.database import get_database
+from backend.security import (
     create_access_token,
     create_refresh_token,
     hash_password,
@@ -25,9 +25,11 @@ async def register(user_data: UserCreate, db=Depends(get_database)):
         )
     
     # Crear nuevo usuario
-    user_dict = user_data.dict()
+    user_dict = user_data.model_dump()
+    user_dict["rol"] = "user"
     user_dict["password_hash"] = hash_password(user_dict.pop("password"))
     user_dict["activo"] = True
+    user_dict["fecha_creacion"] = datetime.utcnow()
     
     result = await db.usuarios.insert_one(user_dict)
     
@@ -81,9 +83,9 @@ async def login(credentials: LoginRequest, db=Depends(get_database)):
 @router.post("/refresh")
 async def refresh_token(token: dict):
     """Refrescar access token"""
-    from security import decode_token
+    from backend.security import decode_token
     
-    token_data = decode_token(token.get("refresh_token", ""))
+    token_data = decode_token(token.get("refresh_token", ""), expected_type="refresh")
     if not token_data:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

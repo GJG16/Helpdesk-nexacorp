@@ -1,24 +1,25 @@
-import math
 from datetime import datetime
 from typing import List, Optional
 
 from bson.objectid import ObjectId
-from fastapi import APIRouter, Depends, Header, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 
-from database import get_database
-from models.schemas import (
+from backend.database import get_database
+from backend.models.schemas import (
     Ticket,
     TicketCreate,
+    TicketComment,
+    TicketCommentCreate,
     TicketFilter,
-    TicketPageResponse,
-    TicketStats,
     TicketStatus,
     TicketUpdate,
+    Priority,
 )
-from realtime import realtime_manager
-from security import decode_token
+from backend.audit import log_deletion
+from backend.security import decode_token
 
 router = APIRouter(prefix="/api/tickets", tags=["tickets"])
+
 
 def _extract_token(authorization: Optional[str], token: Optional[str]) -> Optional[str]:
     if authorization and authorization.startswith("Bearer "):
@@ -31,27 +32,38 @@ def _serialize_ticket(ticket_doc: dict) -> dict:
     return ticket_doc
 
 
+def _is_admin(user: dict) -> bool:
+    return user.get("rol") == "admin"
+
+
+def _is_agent(user: dict) -> bool:
+    return user.get("rol") == "agent"
+
+
+def _ticket_scope_query(current_user: dict) -> dict:
+    if _is_admin(current_user) or _is_agent(current_user):
+        return {}
+    return {"usuario_id": current_user.get("id")}
+
+
+def _is_ticket_owner(ticket: dict, current_user: dict) -> bool:
+    return ticket.get("usuario_id") == current_user.get("id")
+
+
 async def get_current_user(
     authorization: Optional[str] = Header(default=None),
     token: Optional[str] = None,
     db=Depends(get_database),
 ):
-    """Obtener usuario actual desde Bearer token o query token."""
+    """Obtener usuario actual del token"""
     raw_token = _extract_token(authorization, token)
-
     if not raw_token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="No autorizado",
         )
 
-    token_data = decode_token(raw_token)
-    if not raw_token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="No autorizado",
-        )
-
+    token_data = decode_token(raw_token, expected_type="access")
     if not token_data:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -70,51 +82,10 @@ async def get_current_user(
     return user
 
 
-@router.get("/stats", response_model=TicketStats)
-async def get_ticket_stats(db=Depends(get_database), current_user=Depends(get_current_user)):
-    """Obtener métricas de tickets para dashboard."""
-    total = await db.tickets.count_documents({})
-    abiertos = await db.tickets.count_documents({"estado": TicketStatus.ABIERTO})
-    en_progreso = await db.tickets.count_documents({"estado": TicketStatus.EN_PROGRESO})
-    resueltos = await db.tickets.count_documents({"estado": TicketStatus.RESUELTO})
-    cerrados = await db.tickets.count_documents({"estado": TicketStatus.CERRADO})
-
-    return TicketStats(
-        total=total,
-        abiertos=abiertos,
-        en_progreso=en_progreso,
-        resueltos=resueltos,
-        cerrados=cerrados,
-    )
-
-
-@router.get("/paginated", response_model=TicketPageResponse)
-async def get_tickets_paginated(
-    page: int = Query(default=1, ge=1),
-    page_size: int = Query(default=10, ge=1, le=100),
-    db=Depends(get_database),
-    current_user=Depends(get_current_user),
-):
-    """Obtener tickets paginados para listados grandes."""
-    total = await db.tickets.count_documents({})
-    skip = (page - 1) * page_size
-
-    cursor = db.tickets.find().sort("fecha_creacion", -1).skip(skip).limit(page_size)
-    tickets = await cursor.to_list(length=page_size)
-
-    return TicketPageResponse(
-        items=[_serialize_ticket(ticket) for ticket in tickets],
-        total=total,
-        page=page,
-        page_size=page_size,
-        total_pages=max(1, math.ceil(total / page_size)) if page_size else 1,
-    )
-
-
 @router.get("/", response_model=List[Ticket])
 async def get_tickets(db=Depends(get_database), current_user=Depends(get_current_user)):
     """Obtener todos los tickets"""
-    tickets = await db.tickets.find().sort("fecha_creacion", -1).to_list(None)
+    tickets = await db.tickets.find(_ticket_scope_query(current_user)).sort("fecha_creacion", -1).to_list(None)
     return [_serialize_ticket(ticket) for ticket in tickets]
 
 
@@ -129,7 +100,15 @@ async def get_ticket(ticket_id: str, db=Depends(get_database), current_user=Depe
                 detail="Ticket no encontrado",
             )
 
+        if not (_is_admin(current_user) or _is_agent(current_user) or _is_ticket_owner(ticket, current_user)):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No tienes permiso para ver este ticket",
+            )
+
         return _serialize_ticket(ticket)
+    except HTTPException:
+        raise
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -140,7 +119,21 @@ async def get_ticket(ticket_id: str, db=Depends(get_database), current_user=Depe
 @router.post("/", response_model=Ticket)
 async def create_ticket(ticket_data: TicketCreate, db=Depends(get_database), current_user=Depends(get_current_user)):
     """Crear nuevo ticket"""
+    # Los administradores no deben crear tickets desde la UI
+    if _is_admin(current_user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Los administradores no pueden crear tickets",
+        )
+
     ticket_dict = ticket_data.model_dump()
+    # El ticket siempre se asocia al usuario que lo crea
+    ticket_dict["usuario_id"] = current_user.get("id")
+
+    # Forzar prioridad media para usuarios finales independientemente de lo que envíen
+    if current_user.get("rol") == "user":
+        ticket_dict["prioridad"] = Priority.MEDIA.value
+
     ticket_dict["fecha_creacion"] = datetime.utcnow()
     ticket_dict["fecha_actualizacion"] = datetime.utcnow()
 
@@ -149,22 +142,107 @@ async def create_ticket(ticket_data: TicketCreate, db=Depends(get_database), cur
     created_ticket = await db.tickets.find_one({"_id": result.inserted_id})
     created_ticket = _serialize_ticket(created_ticket)
 
-    await realtime_manager.broadcast_json(
-        {
-            "event": "ticket_created",
-            "ticket_id": created_ticket["id"],
-            "timestamp": datetime.utcnow().isoformat(),
-        }
-    )
-
     return created_ticket
+
+
+
+@router.get("/{ticket_id}/comments", response_model=List[TicketComment])
+async def get_ticket_comments(ticket_id: str, db=Depends(get_database), current_user=Depends(get_current_user)):
+    """Obtener comentarios de un ticket"""
+    try:
+        ticket = await db.tickets.find_one({"_id": ObjectId(ticket_id)})
+        if not ticket:
+            raise HTTPException(status_code=404, detail="Ticket no encontrado")
+        
+        if not (_is_admin(current_user) or _is_agent(current_user) or _is_ticket_owner(ticket, current_user)):
+            raise HTTPException(status_code=403, detail="No tienes permiso para ver estos comentarios")
+
+        comments = await db.comments.find({"ticket_id": ticket_id}).sort("fecha_creacion", 1).to_list(None)
+        
+        # Serialize _id to id
+        for c in comments:
+            c["id"] = str(c.pop("_id"))
+            
+        return comments
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.post("/{ticket_id}/comments", response_model=TicketComment)
+async def create_ticket_comment(ticket_id: str, comment_data: TicketCommentCreate, db=Depends(get_database), current_user=Depends(get_current_user)):
+    """Crear un comentario en un ticket"""
+    try:
+        ticket = await db.tickets.find_one({"_id": ObjectId(ticket_id)})
+        if not ticket:
+            raise HTTPException(status_code=404, detail="Ticket no encontrado")
+        
+        if not (_is_admin(current_user) or _is_agent(current_user) or _is_ticket_owner(ticket, current_user)):
+            raise HTTPException(status_code=403, detail="No tienes permiso para comentar en este ticket")
+
+        comment_dict = comment_data.model_dump()
+        comment_dict["ticket_id"] = ticket_id
+        comment_dict["usuario_id"] = current_user.get("id")
+        comment_dict["nombre_autor"] = current_user.get("nombre")
+        comment_dict["rol_autor"] = current_user.get("rol")
+        comment_dict["fecha_creacion"] = datetime.utcnow()
+
+        result = await db.comments.insert_one(comment_dict)
+        
+        # Actualizar fecha del ticket
+        await db.tickets.update_one({"_id": ObjectId(ticket_id)}, {"$set": {"fecha_actualizacion": datetime.utcnow()}})
+
+        created_comment = await db.comments.find_one({"_id": result.inserted_id})
+        created_comment["id"] = str(created_comment.pop("_id"))
+        return created_comment
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 
 @router.put("/{ticket_id}", response_model=Ticket)
 async def update_ticket(ticket_id: str, ticket_update: TicketUpdate, db=Depends(get_database), current_user=Depends(get_current_user)):
     """Actualizar ticket"""
     try:
+        existing_ticket = await db.tickets.find_one({"_id": ObjectId(ticket_id)})
+        if not existing_ticket:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Ticket no encontrado",
+            )
+
         update_data = {k: v for k, v in ticket_update.model_dump().items() if v is not None}
+
+        if _is_admin(current_user):
+            pass
+        elif _is_agent(current_user):
+            allowed_fields = {"estado", "prioridad", "asignado_a"}
+            if any(field not in allowed_fields for field in update_data.keys()):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="El agente solo puede actualizar estado, prioridad o asignación propia",
+                )
+
+            if "asignado_a" in update_data and update_data["asignado_a"] != current_user.get("id"):
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="El agente solo puede asignarse a sí mismo",
+                )
+
+            already_assigned_to_agent = existing_ticket.get("asignado_a") == current_user.get("id")
+            self_assigning_now = update_data.get("asignado_a") == current_user.get("id")
+
+            if not already_assigned_to_agent and not self_assigning_now:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="El agente debe asignarse el ticket antes de modificarlo",
+                )
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Solo administradores o agentes pueden actualizar tickets",
+            )
 
         if not update_data:
             raise HTTPException(
@@ -174,31 +252,20 @@ async def update_ticket(ticket_id: str, ticket_update: TicketUpdate, db=Depends(
 
         update_data["fecha_actualizacion"] = datetime.utcnow()
 
-        # Si se cierra, agregar fecha de resolución
         if ticket_update.estado in (TicketStatus.RESUELTO, TicketStatus.CERRADO):
+            if ticket_update.estado == TicketStatus.RESUELTO and _is_agent(current_user):
+                comentarios = await db.comments.find({"ticket_id": ticket_id, "usuario_id": current_user.get("id")}).to_list(None)
+                if not comentarios:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Debes añadir un comentario o nota de resolución antes de marcar el ticket como resuelto."
+                    )
             update_data["fecha_resolucion"] = datetime.utcnow()
 
-        result = await db.tickets.update_one(
-            {"_id": ObjectId(ticket_id)},
-            {"$set": update_data},
-        )
-
-        if result.matched_count == 0:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Ticket no encontrado",
-            )
+        await db.tickets.update_one({"_id": ObjectId(ticket_id)}, {"$set": update_data})
 
         updated_ticket = await db.tickets.find_one({"_id": ObjectId(ticket_id)})
         updated_ticket = _serialize_ticket(updated_ticket)
-
-        await realtime_manager.broadcast_json(
-            {
-                "event": "ticket_updated",
-                "ticket_id": updated_ticket["id"],
-                "timestamp": datetime.utcnow().isoformat(),
-            }
-        )
 
         return updated_ticket
     except HTTPException:
@@ -214,7 +281,6 @@ async def update_ticket(ticket_id: str, ticket_update: TicketUpdate, db=Depends(
 async def delete_ticket(ticket_id: str, db=Depends(get_database), current_user=Depends(get_current_user)):
     """Eliminar ticket"""
     try:
-        # Solo admin o quien creó el ticket puede eliminarlo
         ticket = await db.tickets.find_one({"_id": ObjectId(ticket_id)})
         if not ticket:
             raise HTTPException(
@@ -222,11 +288,19 @@ async def delete_ticket(ticket_id: str, db=Depends(get_database), current_user=D
                 detail="Ticket no encontrado",
             )
 
-        if current_user.get("rol") != "admin" and ticket.get("usuario_id") != current_user.get("id"):
+        if not _is_admin(current_user):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="No tienes permiso para eliminar este ticket",
+                detail="Solo administradores pueden eliminar tickets",
             )
+
+        await log_deletion(
+            db,
+            action="delete_ticket",
+            resource_type="ticket",
+            resource_id=ticket_id,
+            actor_admin_id=current_user.get("id"),
+        )
 
         result = await db.tickets.delete_one({"_id": ObjectId(ticket_id)})
 
@@ -235,14 +309,6 @@ async def delete_ticket(ticket_id: str, db=Depends(get_database), current_user=D
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Ticket no encontrado",
             )
-
-        await realtime_manager.broadcast_json(
-            {
-                "event": "ticket_deleted",
-                "ticket_id": ticket_id,
-                "timestamp": datetime.utcnow().isoformat(),
-            }
-        )
     except HTTPException:
         raise
     except Exception as e:
@@ -255,18 +321,17 @@ async def delete_ticket(ticket_id: str, db=Depends(get_database), current_user=D
 @router.post("/filter", response_model=List[Ticket])
 async def filter_tickets(filter_data: TicketFilter, db=Depends(get_database), current_user=Depends(get_current_user)):
     """Filtrar tickets"""
-    query = {}
+    query = _ticket_scope_query(current_user)
 
     if filter_data.estado:
         query["estado"] = filter_data.estado
-    if filter_data.usuario_id:
+    if filter_data.usuario_id and _is_admin(current_user):
         query["usuario_id"] = filter_data.usuario_id
-    if filter_data.asignado_a:
+    if filter_data.asignado_a and (_is_admin(current_user) or _is_agent(current_user)):
         query["asignado_a"] = filter_data.asignado_a
     if filter_data.prioridad:
         query["prioridad"] = filter_data.prioridad
-    
-    # Filtro de fechas
+
     if filter_data.fecha_desde or filter_data.fecha_hasta:
         query["fecha_creacion"] = {}
         if filter_data.fecha_desde:
@@ -274,5 +339,5 @@ async def filter_tickets(filter_data: TicketFilter, db=Depends(get_database), cu
         if filter_data.fecha_hasta:
             query["fecha_creacion"]["$lte"] = filter_data.fecha_hasta
 
-    tickets = await db.tickets.find(query).sort("fecha_creacion", -1).to_list(None)
+    tickets = await db.tickets.find(query).to_list(None)
     return [_serialize_ticket(ticket) for ticket in tickets]

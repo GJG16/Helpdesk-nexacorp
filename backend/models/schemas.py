@@ -16,16 +16,12 @@ class UserBase(BaseModel):
 class UserCreate(UserBase):
     password: str = Field(..., min_length=8)
 
+
 class UserUpdate(BaseModel):
     nombre: Optional[str] = Field(default=None, min_length=2, max_length=100)
     email: Optional[EmailStr] = None
     rol: Optional[UserRole] = None
     password: Optional[str] = Field(default=None, min_length=8)
-
-class UserInDB(UserBase):
-    password_hash: str
-    activo: bool = True
-    fecha_creacion: Optional[datetime] = None
 
 class User(UserBase):
     id: Optional[str] = None
@@ -35,9 +31,11 @@ class User(UserBase):
     class Config:
         from_attributes = True
 
+
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
+
 
 class TokenResponse(BaseModel):
     access_token: str
@@ -45,17 +43,18 @@ class TokenResponse(BaseModel):
     token_type: str = "bearer"
     user: User
 
-class Priority(str, Enum):
-    BAJA = "baja"
-    MEDIA = "media"
-    ALTA = "alta"
-    CRITICA = "critica"
-
 class TicketStatus(str, Enum):
     ABIERTO = "abierto"
     EN_PROGRESO = "en_progreso"
     RESUELTO = "resuelto"
     CERRADO = "cerrado"
+
+
+class Priority(str, Enum):
+    BAJA = "baja"
+    MEDIA = "media"
+    ALTA = "alta"
+    CRITICA = "critica"
 
 class TicketBase(BaseModel):
     titulo: str = Field(..., min_length=5, max_length=200)
@@ -65,7 +64,8 @@ class TicketBase(BaseModel):
     asignado_a: Optional[str] = None
 
 class TicketCreate(TicketBase):
-    usuario_id: str
+    usuario_id: Optional[str] = None
+
 
 class TicketUpdate(BaseModel):
     titulo: Optional[str] = Field(default=None, min_length=5, max_length=200)
@@ -73,6 +73,7 @@ class TicketUpdate(BaseModel):
     estado: Optional[TicketStatus] = None
     prioridad: Optional[Priority] = None
     asignado_a: Optional[str] = None
+
 
 class TicketFilter(BaseModel):
     estado: Optional[TicketStatus] = None
@@ -93,17 +94,51 @@ class Ticket(TicketBase):
         from_attributes = True
 
 
-class TicketStats(BaseModel):
-    total: int
-    abiertos: int
-    en_progreso: int
-    resueltos: int
-    cerrados: int
+class TicketCommentBase(BaseModel):
+    texto: str = Field(..., min_length=1, max_length=1000)
+
+class TicketCommentCreate(TicketCommentBase):
+    pass
+
+class TicketComment(TicketCommentBase):
+    id: Optional[str] = None
+    ticket_id: str
+    usuario_id: str
+    nombre_autor: Optional[str] = None
+    rol_autor: Optional[UserRole] = None
+    fecha_creacion: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
 
 
-class TicketPageResponse(BaseModel):
-    items: List[Ticket]
+class AuditAction(str, Enum):
+    DELETE_USER = "delete_user"
+    DELETE_TICKET = "delete_ticket"
+
+
+class AuditLog(BaseModel):
+    id: Optional[str] = None
+    action: AuditAction
+    resource_type: str
+    resource_id: str
+    actor_admin_id: str
+    actor_admin_nombre: Optional[str] = None
+    resource_label: Optional[str] = None
+    created_at: Optional[datetime] = None
+
+
+class TicketReportByState(BaseModel):
+    estado: str
     total: int
-    page: int
-    page_size: int
-    total_pages: int
+
+
+class TicketReportByAgent(BaseModel):
+    asignado_a: str
+    total: int
+
+
+class TicketReport(BaseModel):
+    total_tickets: int
+    by_state: List[TicketReportByState]
+    by_agent: List[TicketReportByAgent]
