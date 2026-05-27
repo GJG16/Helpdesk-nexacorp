@@ -160,6 +160,10 @@ export class TicketsListComponent implements OnInit {
     return this.authService.isAgent();
   }
 
+  isUser(): boolean {
+    return this.authService.isUser();
+  }
+
   goToKanban(): void {
     this.router.navigate(['/tickets/kanban']);
   }
