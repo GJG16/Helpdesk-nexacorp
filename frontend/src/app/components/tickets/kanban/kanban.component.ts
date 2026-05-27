@@ -70,6 +70,11 @@ export class KanbanComponent implements OnInit {
   }
 
   dragStart(event: DragEvent, ticket: Ticket): void {
+    // Protección adicional: evitar iniciar drag si no tiene permisos
+    if (!this.canDrag(ticket)) {
+      event.preventDefault();
+      return;
+    }
     event.dataTransfer?.setData('text/plain', ticket.id || '');
   }
 
