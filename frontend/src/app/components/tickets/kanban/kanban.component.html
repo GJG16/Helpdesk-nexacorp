@@ -40,7 +40,7 @@
           class="card"
           [attr.data-priority]="ticket.prioridad"
           [class.is-draggable]="canDrag(ticket)"
-          [attr.draggable]="canDrag(ticket)"
+          [draggable]="canDrag(ticket)"
           (dragstart)="dragStart($event, ticket)"
         >
           <div class="card-top">
