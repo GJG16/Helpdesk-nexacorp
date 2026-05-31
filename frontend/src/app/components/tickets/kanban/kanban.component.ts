@@ -69,6 +69,7 @@ export class KanbanComponent implements OnInit {
 
     this.ticketService.getTickets().subscribe({
       next: (tickets) => {
+        console.debug('Kanban: ticketService.getTickets() next, count=', Array.isArray(tickets) ? tickets.length : null);
         if (!timedOut) {
           clearTimeout(fallbackTimer);
           this.tickets = tickets;
@@ -76,7 +77,8 @@ export class KanbanComponent implements OnInit {
           this.loading = false;
         }
       },
-      error: () => {
+      error: (err) => {
+        console.debug('Kanban: ticketService.getTickets() error:', err);
         if (!timedOut) {
           clearTimeout(fallbackTimer);
           this.error = 'No fue posible cargar el tablero';
