@@ -90,6 +90,8 @@ test('Kanban diagnostic: carga, consola y red', async ({ page }) => {
     console.log('KANBAN_DIAG boardHtml snapshot:', boardHtml);
     const countsNow = await page.evaluate(() => ({ loading: document.querySelectorAll('[data-testid=kanban-loading]').length, error: document.querySelectorAll('[data-testid=kanban-error]').length, board: document.querySelectorAll('[data-testid=kanban-board]').length }));
     console.log('KANBAN_DIAG counts at timeout:', countsNow);
+    const bodyHtml = await page.content();
+    console.log('KANBAN_DIAG bodyHTML length:', bodyHtml.length);
     throw err;
   }
 
