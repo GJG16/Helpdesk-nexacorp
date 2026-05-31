@@ -15,6 +15,11 @@ try {
         const headers = (init && (init as any).headers) || (typeof input !== 'string' && (input as any).headers) || {};
         const hasAuth = !!(headers && ((headers as any).Authorization || (headers as any).authorization));
         console.debug('fetch-hook: /api/tickets/ called, hasAuth=', hasAuth, 'url=', url, 'initHeaders=', headers);
+        if (!hasAuth) {
+          try {
+            console.debug('fetch-hook: stack for unauthenticated call:\n', new Error().stack);
+          } catch (e) {}
+        }
       }
     } catch (e) {
       // no-op
