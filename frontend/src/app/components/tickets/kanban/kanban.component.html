@@ -54,7 +54,7 @@
           <div class="card-meta">
             <span>#{{ ticket.id?.substring(0, 6) }}</span>
             <span>{{ getAssigneeLabel(ticket) }}</span>
-            <span>Solicitante: {{ ticket.usuario_id.substring(0, 6) }}</span>
+            <span>Solicitante: {{ ticket.usuario_id ? ticket.usuario_id.substring(0, 6) : '—' }}</span>
           </div>
           <div class="card-actions">
             <button *ngIf="canSelfAssign(ticket)" (click)="assignToMe(ticket)" class="btn-mini" data-testid="btn-take-ticket">Tomar ticket</button>
