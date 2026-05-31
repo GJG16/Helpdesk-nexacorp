@@ -32,13 +32,23 @@ export class AuthInterceptor implements HttpInterceptor {
     return next.handle(request).pipe(
       catchError((error: HttpErrorResponse) => {
         if (error.status === 401) {
-          // Intentar refresh del token y reintentar la petición
+          // Evitar intentar refresh sobre la propia ruta de refresh o si ya se intentó
+          const isRefreshCall = request.url.includes('/api/auth/refresh');
+          const alreadyAttempted = request.headers.has('x-refresh-attempted');
+
+          if (isRefreshCall || alreadyAttempted) {
+            this.authService.logout();
+            this.router.navigate(['/login']);
+            return throwError(() => error);
+          }
+
+          // Intentar refresh del token y reintentar la petición una sola vez
           return this.authService.refreshToken().pipe(
             switchMap(() => {
               const newToken = this.authService.getToken();
               if (newToken) {
                 const reqWithNewToken = request.clone({
-                  setHeaders: { Authorization: `Bearer ${newToken}` }
+                  setHeaders: { Authorization: `Bearer ${newToken}`, 'x-refresh-attempted': '1' }
                 });
                 return next.handle(reqWithNewToken);
               }
