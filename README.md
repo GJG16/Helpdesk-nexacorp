@@ -408,6 +408,18 @@ uvicorn.run("main:app", host="0.0.0.0", port=8001)
 
 ---
 
+## 📊 Matriz de Propiedades de Issues
+
+| # | Título del Issue | Tipo | Prioridad | Estado | Sprint | Responsable | Inicio | Duración | Milestone |
+|---|---|---|---|---|---|---|---|---|---|
+| #1 | Configuración de Repositorios y Flujo Gitflow | Tarea | Alta | In Progress | 1 | @GJG16 | 2026-04-01 | 12 días | Sprint 1 |
+| #2 | Inicializar Backend con FastAPI y Conexión a MongoDB | Historia de usuario | Alta | To Do | 1 | @franco27-dev | 2026-04-01 | 12 días | Sprint 1 |
+| #3 | Módulo de Autenticación y Gestión de Roles | Historia de usuario | Alta | To Do | 2 | @franco27-dev | 2026-04-13 | 7 días | Sprint 2 |
+| #4 | Implementar vista de Creación y Listado de Tickets | Historia de usuario | Alta | To Do | 3 | @adriano08-xc | 2026-04-21 | 4 días | Sprint 3 |
+| #6 | Configuración de Pipeline CI/CD para Pruebas Automáticas | Tarea | Media | To Do | 4 | @GJG16 | 2026-04-25 | 5 días | Sprint 4 |
+| #7 | Panel de Control (Dashboard) para Administradores | Historia de usuario | Media | To Do | 5 | @adriano08-xc | 2026-05-01 | 14 días | Sprint 5 |
+| #8 | Dockerización del Sistema y Despliegue en la Nube | Tarea | Alta | To Do | 6 | @GJG16 | 2026-05-15 | 1 día | Sprint 6 |
+
 ## 📞 Contacto y Contribución
 
 - **Repositorio**: https://github.com/GJG16/Helpdesk-nexacorp
@@ -424,15 +436,5 @@ Este proyecto está bajo la licencia MIT. Consulta el archivo `LICENSE` para má
 **Última actualización**: 11 de mayo de 2026
 **Versión**: 1.0.0-alpha
 
-## 📋 3.4 Matriz de propiedades de Issues
 
-| Título del Issue | Tipo | Prioridad | Estado | Sprint | Responsable | Inicio | Duración | Milestone |
-|---|---|---|---|---|---|---|---|---|---|
-| #1 | Configuración de Repositorios y Flujo Gitflow | Tarea | Alta | In Progress | 1 | @GJG16 | 2026-04-01 | 12 días | Sprint 1 |
-| #2 | Inicializar Backend con FastAPI y Conexión a MongoDB | Historia de usuario | Alta | To Do | 1 | @franco27-dev | 2026-04-01 | 12 días | Sprint 1 |
-| #3 | Módulo de Autenticación y Gestión de Roles | Historia de usuario | Alta | To Do | 2 | @franco27-dev | 2026-04-13 | 7 días | Sprint 2 |
-| #4 | Implementar vista de Creación y Listado de Tickets | Historia de usuario | Alta | To Do | 3 | @adriano08-xc | 2026-04-21 | 4 días | Sprint 3 |
-| #6 | Configuración de Pipeline CI/CD para Pruebas Automáticas | Tarea | Media | To Do | 4 | @GJG16 | 2026-04-25 | 5 días | Sprint 4 |
-| #7 | Panel de Control (Dashboard) para Administradores | Historia de usuario | Media | To Do | 5 | @adriano08-xc | 2026-05-01 | 14 días | Sprint 5 |
-| #8 | Dockerización del Sistema y Despliegue en la Nube | Tarea | Alta | To Do | 6 | @GJG16 | 2026-05-15 | 1 día | Sprint 6 |
 
