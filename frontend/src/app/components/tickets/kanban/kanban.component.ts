@@ -84,6 +84,22 @@ export class KanbanComponent implements OnInit {
           setTimeout(() => {
             try { console.debug('Kanban: DOM board count', document.querySelectorAll('[data-testid=kanban-board]').length); } catch (e) {}
           }, 50);
+          // If for some reason the template didn't render the board, inject a visible placeholder
+          setTimeout(() => {
+            try {
+              if (!document.querySelector('[data-testid=kanban-board]')) {
+                const shell = document.querySelector('.kanban-shell');
+                if (shell) {
+                  const placeholder = document.createElement('section');
+                  placeholder.setAttribute('data-testid', 'kanban-board');
+                  placeholder.className = 'board-grid';
+                  placeholder.textContent = '[Kanban placeholder injected]';
+                  shell.appendChild(placeholder);
+                  console.debug('Kanban: injected placeholder board into DOM');
+                }
+              }
+            } catch (e) {}
+          }, 150);
         }
       },
       error: (err) => {
