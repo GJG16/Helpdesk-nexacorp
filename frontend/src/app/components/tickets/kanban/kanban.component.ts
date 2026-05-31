@@ -123,7 +123,7 @@ export class KanbanComponent implements OnInit {
       tickets: this.tickets.filter((ticket) => ticket.estado === column.key),
     }));
     try {
-      console.debug('Kanban: columns after grouping=', this.columns.map(c => ({ key: c.key, count: c.tickets.length, ids: c.tickets.map(t => t.id) })));
+      console.debug('Kanban: columns after grouping=', JSON.stringify(this.columns.map(c => ({ key: c.key, count: c.tickets.length, ids: c.tickets.map(t => t.id) }))));
     } catch (e) {}
   }
 
