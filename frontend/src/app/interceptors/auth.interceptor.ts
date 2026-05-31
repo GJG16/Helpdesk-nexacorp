@@ -21,6 +21,12 @@ export class AuthInterceptor implements HttpInterceptor {
   intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
     const token = this.authService.getToken();
     console.debug('AuthInterceptor: intercept', { url: request.url, hasToken: !!token, headers: Array.from(request.headers.keys()) });
+    if (token) {
+      try {
+        const preview = token.length > 16 ? `${token.slice(0,8)}...${token.slice(-8)}` : token;
+        console.debug('AuthInterceptor: token preview', preview);
+      } catch {}
+    }
 
     if (token) {
       request = request.clone({
