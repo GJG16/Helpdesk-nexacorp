@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
 import { AuthService } from '../../../services/auth.service';
 import { TicketService } from '../../../services/ticket.service';
@@ -33,7 +33,8 @@ export class KanbanComponent implements OnInit {
   constructor(
     private authService: AuthService,
     private ticketService: TicketService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {
     this.currentUser = this.authService.getCurrentUser();
   }
@@ -60,6 +61,7 @@ export class KanbanComponent implements OnInit {
         this.tickets = tickets;
         this.groupTickets();
         this.loading = false;
+        this.cdr.detectChanges();
         console.debug('Kanban(fallback): loading set to', this.loading);
         setTimeout(() => {
           try { console.debug('Kanban(fallback): DOM board count', document.querySelectorAll('[data-testid=kanban-board]').length); } catch (e) {}
@@ -80,6 +82,7 @@ export class KanbanComponent implements OnInit {
           this.tickets = tickets;
           this.groupTickets();
           this.loading = false;
+          this.cdr.detectChanges();
           console.debug('Kanban: loading set to', this.loading);
           setTimeout(() => {
             try { console.debug('Kanban: DOM board count', document.querySelectorAll('[data-testid=kanban-board]').length); } catch (e) {}
@@ -108,6 +111,7 @@ export class KanbanComponent implements OnInit {
           clearTimeout(fallbackTimer);
           this.error = 'No fue posible cargar el tablero';
           this.loading = false;
+          this.cdr.detectChanges();
         }
       }
     });
