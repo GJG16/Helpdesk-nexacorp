@@ -10,14 +10,15 @@
     </div>
   </header>
 
-  <section *ngIf="loading" class="state-card">Cargando tablero...</section>
-  <section *ngIf="error" class="state-card error">{{ error }}</section>
+  <section *ngIf="loading" class="state-card" data-testid="kanban-loading">Cargando tablero...</section>
+  <section *ngIf="error" class="state-card error" data-testid="kanban-error">{{ error }}</section>
 
-  <section *ngIf="!loading && !error" class="board-grid">
+  <section *ngIf="!loading && !error" class="board-grid" data-testid="kanban-board">
     <article
       class="column"
       *ngFor="let column of columns"
       [attr.data-state]="column.key"
+      [attr.data-testid]="'kanban-column-' + column.key"
       (dragover)="allowDrop($event)"
       (drop)="drop($event, column.key)"
     >
@@ -26,7 +27,7 @@
           <p class="column-kicker">{{ getStateLabel(column.key) }}</p>
           <h2>{{ column.label }}</h2>
         </div>
-        <span class="counter">{{ column.tickets.length }}</span>
+        <span class="counter" data-testid="column-counter">{{ column.tickets.length }}</span>
       </div>
 
       <p class="column-hint">{{ column.key === 'abierto' ? 'Recién creados o por tomar' : 'Arrastra solo si tienes permiso' }}</p>
@@ -40,8 +41,10 @@
           class="card"
           [attr.data-priority]="ticket.prioridad"
           [class.is-draggable]="canDrag(ticket)"
-          [attr.draggable]="canDrag(ticket)"
+          [draggable]="canDrag(ticket)"
           (dragstart)="dragStart($event, ticket)"
+          data-testid="kanban-card"
+          [attr.data-ticket-id]="ticket.id"
         >
           <div class="card-top">
             <strong>{{ ticket.titulo }}</strong>
@@ -54,9 +57,9 @@
             <span>Solicitante: {{ ticket.usuario_id.substring(0, 6) }}</span>
           </div>
           <div class="card-actions">
-            <button *ngIf="canSelfAssign(ticket)" (click)="assignToMe(ticket)" class="btn-mini">Tomar ticket</button>
-            <span class="drag-hint" *ngIf="canDrag(ticket)">Listo para mover</span>
-            <span class="drag-hint muted" *ngIf="!canDrag(ticket)">Solo lectura hasta asignación</span>
+            <button *ngIf="canSelfAssign(ticket)" (click)="assignToMe(ticket)" class="btn-mini" data-testid="btn-take-ticket">Tomar ticket</button>
+            <span class="drag-hint" *ngIf="canDrag(ticket)" data-testid="drag-hint-ready">Listo para mover</span>
+            <span class="drag-hint muted" *ngIf="!canDrag(ticket)" data-testid="drag-hint-readonly">Solo lectura hasta asignación</span>
           </div>
         </div>
       </div>
