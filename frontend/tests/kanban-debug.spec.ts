@@ -5,11 +5,15 @@ const BASE = process.env.E2E_BASE_URL || 'http://localhost:4200';
 test('Kanban diagnostic: carga, consola y red', async ({ page }) => {
   const consoleMsgs: string[] = [];
   const failedRequests: Array<{url:string,status?:number,method?:string,err?:string}> = [];
+  const apiRequests: Array<any> = [];
 
   page.on('console', msg => consoleMsgs.push(`${msg.type()}: ${msg.text()}`));
   page.on('requestfailed', req => failedRequests.push({ url: req.url(), method: req.method(), err: String(req.failure()) }));
   page.on('response', resp => {
     if (resp.status() >= 400) failedRequests.push({ url: resp.url(), status: resp.status(), method: resp.request().method() });
+  });
+  page.on('request', req => {
+    if (req.url().includes('/api/tickets/')) apiRequests.push({ url: req.url(), method: req.method(), headers: req.headers() });
   });
 
   await page.goto(`${BASE}/login`);
@@ -25,7 +29,10 @@ test('Kanban diagnostic: carga, consola y red', async ({ page }) => {
   const storedToken = await page.evaluate(() => localStorage.getItem('access_token'));
   const storedUser = await page.evaluate(() => localStorage.getItem('currentUser'));
   console.log('KANBAN_DIAG url=', currentUrl);
-  console.log('KANBAN_DIAG token?', !!storedToken, 'user?', storedUser?.substring(0,200));
+  try {
+    const preview = storedToken && storedToken.length > 16 ? `${storedToken.substring(0,8)}...${storedToken.substring(storedToken.length-8)}` : storedToken;
+    console.log('KANBAN_DIAG token?', !!storedToken, 'preview?', preview, 'user?', storedUser?.substring(0,200));
+  } catch (e) { console.log('KANBAN_DIAG token?', !!storedToken); }
 
   // Dump quick DOM counts immediately after navigation
   const immediateCounts = await page.evaluate(() => ({
@@ -59,6 +66,7 @@ test('Kanban diagnostic: carga, consola y red', async ({ page }) => {
     }
   });
   console.log('KANBAN_DIAG apiAuthCheck:', apiAuthCheck);
+  console.log('KANBAN_DIAG apiRequests seen by Playwright:', apiRequests.slice(-10));
   // esperar a que el componente muestre el tablero o un error
   const board = page.locator('[data-testid=kanban-board]');
   const loading = page.locator('[data-testid=kanban-loading]');
