@@ -20,6 +20,7 @@ export class AuthInterceptor implements HttpInterceptor {
 
   intercept(request: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
     const token = this.authService.getToken();
+    console.debug('AuthInterceptor: intercept', { url: request.url, hasToken: !!token, headers: Array.from(request.headers.keys()) });
 
     if (token) {
       request = request.clone({
@@ -27,6 +28,7 @@ export class AuthInterceptor implements HttpInterceptor {
           Authorization: `Bearer ${token}`
         }
       });
+      console.debug('AuthInterceptor: attached Authorization header for', request.url);
     }
 
     return next.handle(request).pipe(
@@ -35,6 +37,7 @@ export class AuthInterceptor implements HttpInterceptor {
           // Evitar intentar refresh sobre la propia ruta de refresh o si ya se intentó
           const isRefreshCall = request.url.includes('/api/auth/refresh');
           const alreadyAttempted = request.headers.has('x-refresh-attempted');
+          console.debug('AuthInterceptor: 401 detected', { url: request.url, isRefreshCall, alreadyAttempted });
 
           if (isRefreshCall || alreadyAttempted) {
             this.authService.logout();
