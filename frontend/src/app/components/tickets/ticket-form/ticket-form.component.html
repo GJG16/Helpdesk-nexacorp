@@ -2,7 +2,7 @@
   <div class="form-card">
     <h2>{{ isEditMode ? 'Editar' : 'Crear' }} Ticket</h2>
 
-    <form [formGroup]="ticketForm" (ngSubmit)="onSubmit()">
+    <form [formGroup]="ticketForm" (ngSubmit)="onSubmit()" data-testid="ticket-form">
       <div *ngIf="error" class="alert alert-danger">
         {{ error }}
       </div>
@@ -15,6 +15,7 @@
           formControlName="titulo"
           placeholder="Ingresa el título del ticket"
           [class.is-invalid]="f['titulo'].invalid && f['titulo'].touched"
+          data-testid="input-titulo"
         />
         <div *ngIf="f['titulo'].invalid && f['titulo'].touched" class="invalid-feedback">
           <div *ngIf="f['titulo'].errors?.['required']">El título es requerido</div>
@@ -30,6 +31,7 @@
           placeholder="Describe el problema en detalle"
           rows="5"
           [class.is-invalid]="f['descripcion'].invalid && f['descripcion'].touched"
+          data-testid="input-descripcion"
         ></textarea>
         <div *ngIf="f['descripcion'].invalid && f['descripcion'].touched" class="invalid-feedback">
           <div *ngIf="f['descripcion'].errors?.['required']">La descripción es requerida</div>
@@ -44,6 +46,7 @@
             id="prioridad"
             formControlName="prioridad"
             [class.is-invalid]="f['prioridad'].invalid && f['prioridad'].touched"
+            data-testid="select-prioridad"
           >
             <option value="baja">Baja</option>
             <option value="media">Media</option>
@@ -58,6 +61,7 @@
             id="estado"
             formControlName="estado"
             [class.is-invalid]="f['estado'].invalid && f['estado'].touched"
+            data-testid="select-estado"
           >
             <option value="abierto">Abierto</option>
             <option value="en_progreso">En Progreso</option>
@@ -76,17 +80,17 @@
       </div>
 
       <div class="form-actions">
-        <button type="submit" class="btn btn-primary" [disabled]="loading || ticketForm.disabled">
+        <button type="submit" class="btn btn-primary" [disabled]="loading || ticketForm.disabled" data-testid="btn-submit-ticket">
           {{ loading ? 'Guardando...' : 'Actualizar' }}
         </button>
-        <button type="button" class="btn btn-secondary" (click)="cancel()">
+        <button type="button" class="btn btn-secondary" (click)="cancel()" data-testid="btn-cancel-ticket">
           Regresar
         </button>
       </div>
     </form>
     
     <!-- Sección de Comentarios -->
-    <div class="comments-section" *ngIf="isEditMode">
+    <div class="comments-section" *ngIf="isEditMode" data-testid="comments-section">
       <h3>Historial de Conversación y Notas</h3>
       <div class="comments-list">
         <div *ngIf="comments.length === 0" class="no-comments">No hay comentarios ni notas aún.</div>
@@ -102,8 +106,8 @@
       </div>
       
       <div class="comment-input-area">
-        <textarea [(ngModel)]="newCommentTexto" placeholder="Escribe un comentario o nota..." rows="3" class="form-control textarea"></textarea>
-        <button (click)="submitComment()" class="btn btn-primary btn-comment" [disabled]="submittingComment || !newCommentTexto.trim()">
+        <textarea [(ngModel)]="newCommentTexto" placeholder="Escribe un comentario o nota..." rows="3" class="form-control textarea" data-testid="input-new-comment"></textarea>
+        <button (click)="submitComment()" class="btn btn-primary btn-comment" [disabled]="submittingComment || !newCommentTexto.trim()" data-testid="btn-submit-comment">
           {{ submittingComment ? 'Enviando...' : 'Enviar mensaje' }}
         </button>
       </div>
