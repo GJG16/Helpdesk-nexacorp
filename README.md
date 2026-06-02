@@ -412,18 +412,18 @@ uvicorn.run("main:app", host="0.0.0.0", port=8001)
 
 | # | Título del Issue | Tipo | Prioridad | Estado | Sprint | Responsable | Milestone |
 |---|---|---|---|---|---|---|---|
-| #1 | Configuración de Repositorios y Flujo Gitflow | Tarea | Alta | ✅ Closed | 1 | @GJG16 | Sprint 1 |
-| #2 | Inicializar Backend con FastAPI y Conexión a MongoDB | Historia de usuario | Alta | ✅ Closed | 1 | @franco27-dev | Sprint 1 |
-| #3 | Módulo de Autenticación y Gestión de Roles | Historia de usuario | Alta | ✅ Closed | 2 | @franco27-dev | Sprint 2 |
-| #4 | Implementar vista de Creación y Listado de Tickets | Historia de usuario | Alta | ✅ Closed | 3 | @adriano08-xc | Sprint 3 |
-| #6 | Configuración de Pipeline CI/CD para Pruebas Automáticas | Tarea | Media | ✅ Closed | 4 | @GJG16 | Sprint 4 |
-| #7 | Panel de Control (Dashboard) para Administradores | Historia de usuario | Media | ✅ Closed | 5 | @adriano08-xc | Sprint 5 |
-| #8 | Dockerización del Sistema y Despliegue en la Nube | Tarea | Alta | 🔄 Open | 8 | @GJG16 | Sprint 8 |
-| #19 | Notificaciones en Tiempo Real (WebSocket) | Historia de usuario | Alta | 🔄 Open | 6 | @GJG16 | Sprint 6 |
-| #20 | Sistema de Categorías y SLA para Tickets | Historia de usuario | Alta | 🔄 Open | 6 | @adriano08-xc | Sprint 6 |
-| #21 | Panel de Administración de Usuarios | Historia de usuario | Media | 🔄 Open | 7 | @adriano08-xc | Sprint 7 |
-| #22 | Pruebas E2E y Limpieza de Codigo de Debug | Tarea | Media | 🔄 Open | 7 | @franco27-dev | Sprint 7 |
-| #23 | Documentación Técnica y Entrega Final | Tarea | Alta | 🔄 Open | 8 | @GJG16 | Sprint 8 |
+| #1 | Configuración de Repositorios y Flujo Gitflow | Tarea | Alta | In Progress | 1 | @GJG16 | Sprint 1 |
+| #2 | Inicializar Backend con FastAPI y Conexión a MongoDB | Historia de usuario | Alta | In Progress | 1 | @franco27-dev | Sprint 1 |
+| #3 | Módulo de Autenticación y Gestión de Roles | Historia de usuario | Alta | In Progress | 2 | @franco27-dev | Sprint 2 |
+| #4 | Implementar vista de Creación y Listado de Tickets | Historia de usuario | Alta | Code Review | 3 | @adriano08-xc | Sprint 3 |
+| #6 | Configuración de Pipeline CI/CD para Pruebas Automáticas | Tarea | Media | In Progress | 4 | @GJG16 | Sprint 4 |
+| #7 | Panel de Control (Dashboard) para Administradores | Historia de usuario | Media | In Progress | 5 | @adriano08-xc | Sprint 5 |
+| #8 | Dockerización del Sistema y Despliegue en la Nube | Tarea | Alta | In Progress | 8 | @GJG16 | Sprint 8 |
+| #19 | Notificaciones en Tiempo Real (WebSocket) | Historia de usuario | Alta | Backlog | 6 | @GJG16 | Sprint 6 |
+| #20 | Sistema de Categorías y SLA para Tickets | Historia de usuario | Alta | Backlog | 6 | @adriano08-xc | Sprint 6 |
+| #21 | Panel de Administración de Usuarios | Historia de usuario | Media | Backlog | 7 | @adriano08-xc | Sprint 7 |
+| #22 | Pruebas E2E y Limpieza de Codigo de Debug | Tarea | Media | Backlog | 7 | @franco27-dev | Sprint 7 |
+| #23 | Documentación Técnica y Entrega Final | Tarea | Alta | Backlog | 8 | @GJG16 | Sprint 8 |
 ## 📞 Contacto y Contribución
 
 - **Repositorio**: https://github.com/GJG16/Helpdesk-nexacorp
