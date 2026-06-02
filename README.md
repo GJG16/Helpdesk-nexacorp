@@ -437,7 +437,7 @@ Este proyecto está bajo la licencia MIT. Consulta el archivo `LICENSE` para má
 
 ---
 
-**Última actualización**: 11 de mayo de 2026
+**Última actualización**: 01 de Junio de 2026
 **Versión**: 1.0.0-alpha
 
 
