@@ -4,10 +4,12 @@ import { CommonModule } from '@angular/common';
 import { TicketService } from '../../../services/ticket.service';
 import { Ticket } from '../../../models';
 
+import { QuillModule } from 'ngx-quill';
+
 @Component({
   selector: 'app-ticket-create-modal',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, QuillModule],
   templateUrl: './ticket-create-modal.component.html',
   styleUrls: ['./ticket-create-modal.component.css']
 })
@@ -26,7 +28,8 @@ export class TicketCreateModalComponent implements OnInit {
   ) {
     this.ticketForm = this.formBuilder.group({
       titulo: ['', [Validators.required, Validators.minLength(5)]],
-      descripcion: ['', [Validators.required, Validators.minLength(10)]]
+      descripcion: ['', [Validators.required, Validators.minLength(10)]],
+      tipo: ['incidente', [Validators.required]]
     });
   }
 

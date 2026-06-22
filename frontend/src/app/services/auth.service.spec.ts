@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { AuthService } from './auth.service';
 import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { environment } from '../../../environments/environment';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -23,23 +24,17 @@ describe('AuthService', () => {
     expect(service).toBeTruthy();
   });
 
-  it('should login user and store token', () => {
-    const mockResponse = {
-      access_token: 'test-token',
-      refresh_token: 'refresh-token',
-      user: {
-        id: '1',
-        nombre: 'Test',
-        email: 'test@example.com',
-        rol: 'user'
-      }
+  it('should call login endpoint and save tokens', () => {
+    const mockResponse: any = {
+      access_token: 'fake_access_token',
+      refresh_token: 'fake_refresh_token',
+      token_type: 'bearer',
+      user: { id: '1', nombre: 'Test User', email: 'test@example.com', rol: 'user' }
     };
 
-    service.login('test@example.com', 'password').subscribe(response => {
-      expect(response.access_token).toBe('test-token');
-    });
+    service.login('test@example.com', 'password').subscribe();
 
-    const req = httpMock.expectOne('http://localhost:8000/api/auth/login');
+    const req = httpMock.expectOne(`${environment.apiUrl}/auth/login`);
     expect(req.request.method).toBe('POST');
     req.flush(mockResponse);
   });

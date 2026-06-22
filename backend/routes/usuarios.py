@@ -7,50 +7,9 @@ from backend.database import get_database
 from backend.models.schemas import User, UserUpdate
 from backend.audit import log_deletion
 from backend.security import decode_token, hash_password
+from backend.dependencies import get_current_user, _serialize_user
 
 router = APIRouter(prefix="/api/usuarios", tags=["usuarios"])
-
-
-def _extract_token(authorization: Optional[str], token: Optional[str]) -> Optional[str]:
-    if authorization and authorization.startswith("Bearer "):
-        return authorization.split(" ", 1)[1]
-    return token
-
-
-def _serialize_user(user: dict) -> dict:
-    user["id"] = str(user.pop("_id"))
-    user.pop("password_hash", None)
-    return user
-
-
-async def get_current_user(
-    authorization: Optional[str] = Header(default=None),
-    token: Optional[str] = None,
-    db=Depends(get_database),
-):
-    """Obtener usuario actual del token"""
-    raw_token = _extract_token(authorization, token)
-    if not raw_token:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="No autorizado",
-        )
-
-    token_data = decode_token(raw_token, expected_type="access")
-    if not token_data:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token inválido o expirado",
-        )
-
-    user = await db.usuarios.find_one({"_id": ObjectId(token_data.user_id)})
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Usuario no encontrado",
-        )
-
-    return _serialize_user(user)
 
 
 @router.get("/perfil/me", response_model=User)
@@ -59,17 +18,31 @@ async def get_perfil(current_user=Depends(get_current_user)):
     return current_user
 
 
-@router.get("/", response_model=List[User])
-async def get_usuarios(db=Depends(get_database), current_user=Depends(get_current_user)):
-    """Obtener todos los usuarios"""
+from fastapi import Query
+
+@router.get("/", response_model=dict)
+async def get_usuarios(
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=20, ge=1, le=100),
+    db=Depends(get_database),
+    current_user=Depends(get_current_user)
+):
+    """Obtener todos los usuarios con paginación"""
     if current_user.get("rol") != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Solo administradores pueden ver todos los usuarios",
         )
 
-    usuarios = await db.usuarios.find().to_list(None)
-    return [_serialize_user(user) for user in usuarios]
+    total = await db.usuarios.count_documents({})
+    skip = (page - 1) * limit
+    usuarios = await db.usuarios.find().sort("fecha_creacion", -1).skip(skip).limit(limit).to_list(limit)
+    return {
+        "items": [_serialize_user(user) for user in usuarios],
+        "total": total,
+        "page": page,
+        "pages": (total + limit - 1) // limit,
+    }
 
 
 @router.get("/{usuario_id}", response_model=User)

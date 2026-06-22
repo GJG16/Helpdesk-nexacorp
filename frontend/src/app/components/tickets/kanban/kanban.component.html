@@ -37,27 +37,34 @@
           No hay tickets en esta columna.
         </div>
         <div
-          *ngFor="let ticket of column.tickets"
+          *ngFor="let ticket of column.tickets; trackBy: trackById"
           class="card"
           [attr.data-priority]="ticket.prioridad"
           [class.is-draggable]="canDrag(ticket)"
           [draggable]="canDrag(ticket)"
           (dragstart)="dragStart($event, ticket)"
+          (click)="viewTicket(ticket.id)"
           data-testid="kanban-card"
           [attr.data-ticket-id]="ticket.id"
         >
           <div class="card-top">
-            <strong>{{ ticket.titulo }}</strong>
-            <span class="priority" [attr.data-priority]="ticket.prioridad">{{ getPriorityLabel(ticket) }}</span>
+              <strong class="card-title">{{ ticket.titulo }}</strong>
+              <div class="card-badges">
+                <span class="badge" [attr.data-priority]="ticket.prioridad">{{ ticket.prioridad }}</span>
+                <span class="type-badge" [attr.data-type]="ticket.tipo">{{ ticket.tipo === 'incidente' ? 'Incidente' : 'Req.' }}</span>
+                <span class="sla-badge" [class.breached]="isSlaBreached(ticket)" [class.active]="ticket.estado !== 'resuelto' && ticket.estado !== 'cerrado'">
+                  ⏱ {{ getSlaTimeRemaining(ticket) }}
+                </span>
+              </div>
           </div>
-          <p>{{ ticket.descripcion }}</p>
+          <p>{{ stripHtml(ticket.descripcion) }}</p>
           <div class="card-meta">
             <span>#{{ ticket.id?.substring(0, 6) }}</span>
             <span>{{ getAssigneeLabel(ticket) }}</span>
             <span>Solicitante: {{ ticket.usuario_id ? ticket.usuario_id.substring(0, 6) : '—' }}</span>
           </div>
           <div class="card-actions">
-            <button *ngIf="canSelfAssign(ticket)" (click)="assignToMe(ticket)" class="btn-mini" data-testid="btn-take-ticket">Tomar ticket</button>
+            <button *ngIf="canSelfAssign(ticket)" (click)="assignToMe(ticket); $event.stopPropagation()" class="btn-mini" data-testid="btn-take-ticket">Tomar ticket</button>
             <span class="drag-hint" *ngIf="canDrag(ticket)" data-testid="drag-hint-ready">Listo para mover</span>
             <span class="drag-hint muted" *ngIf="!canDrag(ticket)" data-testid="drag-hint-readonly">Solo lectura hasta asignación</span>
           </div>
@@ -66,3 +73,9 @@
     </article>
   </section>
 </div>
+
+<app-ticket-form
+  *ngIf="editingTicketId"
+  [modalTicketId]="editingTicketId"
+  (close)="closeEditModal()">
+</app-ticket-form>

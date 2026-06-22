@@ -53,27 +53,29 @@ export class DashboardComponent implements OnInit {
 
   loadDashboard(): void {
     this.loading = true;
+    
+    // Fetch recent tickets
     this.ticketService.getTickets().subscribe({
-      next: (tickets) => {
-        this.tickets = tickets.slice(0, 5); // Últimos 5 tickets
-        this.calculateStats(tickets);
+      next: (response) => {
+        this.tickets = response.items.slice(0, 5); // Últimos 5 tickets
+        this.cdr.detectChanges();
+      },
+      error: (error) => console.error('Error al cargar tickets:', error)
+    });
+
+    // Fetch real stats
+    this.ticketService.getTicketStats().subscribe({
+      next: (stats) => {
+        this.stats = stats;
         this.loading = false;
         this.cdr.detectChanges();
       },
       error: (error) => {
-        console.error('Error al cargar tickets:', error);
+        console.error('Error al cargar stats:', error);
         this.loading = false;
         this.cdr.detectChanges();
       }
     });
-  }
-
-  calculateStats(tickets: Ticket[]): void {
-    this.stats.total = tickets.length;
-    this.stats.abiertos = tickets.filter(t => t.estado === 'abierto').length;
-    this.stats.en_progreso = tickets.filter(t => t.estado === 'en_progreso').length;
-    this.stats.resueltos = tickets.filter(t => t.estado === 'resuelto').length;
-    this.stats.cerrados = tickets.filter(t => t.estado === 'cerrado').length;
   }
 
   logout(): void {

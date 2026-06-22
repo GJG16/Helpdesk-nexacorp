@@ -47,6 +47,21 @@
         </div>
 
         <div class="filter-group">
+          <label for="filterTipo">Tipo</label>
+          <select
+            id="filterTipo"
+            [(ngModel)]="filterTipo"
+            (change)="onFilterChange()"
+            class="filter-select"
+            data-testid="filter-tipo"
+          >
+            <option value="">Todos</option>
+            <option value="incidente">Incidente</option>
+            <option value="requerimiento">Requerimiento</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
           <label for="filterPrioridad">Prioridad</label>
           <select
             id="filterPrioridad"
@@ -66,7 +81,18 @@
     </section>
 
     <section class="board-panel">
-      <div *ngIf="loading" class="loading" data-testid="loading-state">Cargando tickets...</div>
+      <div *ngIf="loading" class="loading-skeleton" data-testid="loading-state">
+        <div class="skeleton-row" *ngFor="let i of [1,2,3,4,5]">
+          <div class="skeleton-cell id"></div>
+          <div class="skeleton-cell title"></div>
+          <div class="skeleton-cell desc"></div>
+          <div class="skeleton-cell badge"></div>
+          <div class="skeleton-cell badge"></div>
+          <div class="skeleton-cell id"></div>
+          <div class="skeleton-cell id"></div>
+          <div class="skeleton-cell actions"></div>
+        </div>
+      </div>
 
       <div *ngIf="!loading && filteredTickets.length > 0" class="tickets-table" data-testid="tickets-table">
         <table>
@@ -74,21 +100,29 @@
             <tr>
               <th>ID</th>
               <th>Título</th>
+              <th>Tipo</th>
               <th>Descripción</th>
               <th>Estado</th>
               <th>Prioridad</th>
+              <th>SLA</th>
               <th>Solicitante</th>
               <th>Asignado</th>
               <th>Acciones</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let ticket of filteredTickets" data-testid="ticket-row" [attr.data-ticket-id]="ticket.id">
+            <tr *ngFor="let ticket of filteredTickets; trackBy: trackById" class="ticket-row" data-testid="ticket-row" [attr.data-ticket-id]="ticket.id">
               <td>#{{ ticket.id?.substring(0, 6) }}</td>
               <td class="title">{{ ticket.titulo }}</td>
-              <td class="description">{{ ticket.descripcion | slice:0:50 }}...</td>
+              <td><span class="type-badge" [attr.data-type]="ticket.tipo">{{ ticket.tipo === 'incidente' ? 'Incidente' : 'Req.' }}</span></td>
+              <td class="description">{{ stripHtml(ticket.descripcion) | slice:0:50 }}...</td>
               <td><span class="badge" [attr.data-state]="ticket.estado">{{ ticket.estado }}</span></td>
               <td><span class="badge" [attr.data-priority]="ticket.prioridad">{{ ticket.prioridad }}</span></td>
+              <td>
+                <span class="sla-badge" [class.breached]="isSlaBreached(ticket)" [class.active]="ticket.estado !== 'resuelto' && ticket.estado !== 'cerrado'">
+                  {{ getSlaTimeRemaining(ticket) }}
+                </span>
+              </td>
               <td>{{ ticket.usuario_id.substring(0, 6) }}</td>
               <td>{{ ticket.asignado_a ? ticket.asignado_a.substring(0, 6) : 'Sin asignar' }}</td>
               <td class="actions">
@@ -113,3 +147,9 @@
   (close)="isModalOpen = false" 
   (ticketCreated)="loadTickets()">
 </app-ticket-create-modal>
+
+<app-ticket-form
+  *ngIf="editingTicketId"
+  [modalTicketId]="editingTicketId"
+  (close)="closeEditModal()">
+</app-ticket-form>

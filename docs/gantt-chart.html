@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión de Actividades — Helpdesk NexaCorp</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    /* ─── Reset & Base ─── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 14px; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      min-height: 100vh;
+      padding: 0;
+    }
+
+    /* ─── Container ─── */
+    .gantt-wrapper {
+      max-width: 100%;
+      margin: 0;
+      background: #fff;
+      border-radius: 0;
+      box-shadow: none;
+      overflow: hidden;
+      min-height: 100vh;
+    }
+
+    /* ─── Header ─── */
+    .gantt-header {
+      display: none;
+      align-items: center;
+      gap: 20px;
+      padding: 28px 36px 20px;
+      border-bottom: 1px solid #e8ecf1;
+      flex-wrap: wrap;
+    }
+    .gantt-header .gh-icon {
+      width: 44px; height: 44px;
+      background: #24292f;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .gantt-header .gh-icon svg { width: 26px; height: 26px; fill: #fff; }
+    .gantt-header .title-block h1 {
+      font-size: 1.35rem;
+      font-weight: 800;
+      color: #1a1a2e;
+      line-height: 1.2;
+    }
+    .gantt-header .title-block h1 span.num {
+      color: #6366f1;
+    }
+    .gantt-header .title-block .subtitle {
+      font-size: 0.82rem;
+      color: #6b7280;
+      margin-top: 2px;
+    }
+    .gantt-header .subtitle strong {
+      color: #6366f1;
+      font-weight: 600;
+    }
+
+    /* ─── Meta Bar ─── */
+    .meta-bar {
+      display: flex;
+      align-items: center;
+      gap: 32px;
+      padding: 16px 36px;
+      background: #f8f9fb;
+      border-bottom: 1px solid #e8ecf1;
+      flex-wrap: wrap;
+    }
+    .meta-item {
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+    .meta-item .label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #9ca3af;
+      font-weight: 600;
+    }
+    .meta-item .value {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: #374151;
+    }
+
+    /* ─── Sprint Badges ─── */
+    .sprint-badges {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-left: auto;
+    }
+    .sprint-badges .badge-label {
+      font-size: 0.72rem;
+      color: #9ca3af;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-right: 4px;
+    }
+    .sprint-badge {
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.02em;
+    }
+
+    /* ─── Team Strip ─── */
+    .team-strip {
+      display: flex;
+      gap: 28px;
+      padding: 18px 36px;
+      border-bottom: 1px solid #e8ecf1;
+      flex-wrap: wrap;
+    }
+    .team-member {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .avatar {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700;
+      font-size: 0.82rem;
+      color: #fff;
+      flex-shrink: 0;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+    }
+    .team-member .info .name {
+      font-weight: 700;
+      font-size: 0.82rem;
+      color: #1a1a2e;
+    }
+    .team-member .info .role {
+      font-size: 0.7rem;
+      padding: 1px 8px;
+      border-radius: 10px;
+      font-weight: 600;
+      display: inline-block;
+      margin-top: 2px;
+    }
+
+    /* ─── Chart ─── */
+    .gantt-chart {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      min-height: 400px;
+    }
+
+    /* Left Panel */
+    .gantt-left {
+      border-right: 2px solid #e8ecf1;
+    }
+    .gantt-left .col-header {
+      display: grid;
+      grid-template-columns: 50px 40px 1fr 90px 70px;
+      gap: 4px;
+      padding: 10px 12px;
+      background: #f1f3f7;
+      border-bottom: 2px solid #e0e3e9;
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #6b7280;
+      align-items: center;
+    }
+
+    /* Sprint group */
+    .sprint-group-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      font-weight: 700;
+      font-size: 0.82rem;
+      border-bottom: 1px solid #e8ecf1;
+      cursor: default;
+    }
+    .sprint-group-header .sprint-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    /* Rows */
+    .gantt-row-left {
+      display: grid;
+      grid-template-columns: 50px 40px 1fr 90px 70px;
+      gap: 4px;
+      padding: 8px 12px;
+      align-items: center;
+      border-bottom: 1px solid #f1f3f7;
+      transition: background 0.15s;
+      min-height: 44px;
+    }
+    .gantt-row-left:hover { background: #f8f9fb; }
+    .gantt-row-left .hito { font-size: 0.72rem; color: #9ca3af; font-weight: 600; }
+    .gantt-row-left .issue-num { font-size: 0.72rem; color: #6366f1; font-weight: 700; }
+    .gantt-row-left .task-name {
+      font-size: 0.78rem;
+      font-weight: 500;
+      color: #374151;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .gantt-row-left .responsible {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .gantt-row-left .responsible .avatar-sm {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700;
+      font-size: 0.6rem;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .gantt-row-left .responsible .resp-name {
+      font-size: 0.72rem;
+      color: #6b7280;
+      font-weight: 500;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .gantt-row-left .duration {
+      font-size: 0.72rem;
+      color: #9ca3af;
+      font-weight: 600;
+      text-align: center;
+    }
+
+    /* Right Panel — Timeline */
+    .gantt-right {
+      overflow-x: auto;
+      position: relative;
+    }
+    .timeline-header {
+      display: flex;
+      background: #f1f3f7;
+      border-bottom: 2px solid #e0e3e9;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .timeline-month {
+      text-align: center;
+      border-right: 1px solid #e0e3e9;
+      flex-shrink: 0;
+    }
+    .timeline-month .month-label {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: #374151;
+      padding: 4px 0 2px;
+      border-bottom: 1px solid #e0e3e9;
+    }
+    .timeline-month .weeks {
+      display: flex;
+    }
+    .timeline-month .week {
+      flex: 1;
+      font-size: 0.62rem;
+      color: #9ca3af;
+      font-weight: 600;
+      padding: 3px 0;
+      border-right: 1px solid #eff1f5;
+      text-align: center;
+    }
+    .timeline-month .week:last-child { border-right: none; }
+
+    /* Grid body */
+    .timeline-body {
+      position: relative;
+    }
+    .timeline-row {
+      position: relative;
+      height: 44px;
+      border-bottom: 1px solid #f1f3f7;
+      display: flex;
+      align-items: center;
+    }
+    .timeline-row.sprint-header-row {
+      height: 38px;
+      background: transparent;
+    }
+
+    /* Grid columns */
+    .grid-col {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      border-right: 1px solid #f3f4f6;
+    }
+    .grid-col.week-line {
+      border-right: 1px dashed #e5e7eb;
+    }
+
+    /* Today marker */
+    .today-marker {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: #ef4444;
+      z-index: 5;
+    }
+    .today-marker::before {
+      content: 'Hoy';
+      position: absolute;
+      top: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 0.6rem;
+      font-weight: 700;
+      color: #ef4444;
+      white-space: nowrap;
+      background: #fff;
+      padding: 1px 6px;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(239,68,68,0.2);
+    }
+
+    /* Bars */
+    .bar {
+      position: absolute;
+      height: 22px;
+      border-radius: 6px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: #fff;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      cursor: pointer;
+      transition: transform 0.18s, box-shadow 0.18s;
+      z-index: 3;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      padding: 0 8px;
+    }
+    .bar:hover {
+      transform: translateY(-50%) scale(1.04);
+      box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+      z-index: 6;
+    }
+    .bar .bar-dates {
+      font-weight: 500;
+      opacity: 0.9;
+    }
+
+    /* ─── Info sidebar ─── */
+    .info-sidebar {
+      padding: 24px 36px 28px;
+      border-top: 1px solid #e8ecf1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+    .info-card {
+      background: #f8f9fb;
+      border-radius: 14px;
+      padding: 20px;
+      border: 1px solid #e8ecf1;
+    }
+    .info-card h3 {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: #6366f1;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .info-card h3 .icon {
+      width: 22px; height: 22px;
+      background: #6366f1;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .info-card h3 .icon svg { width: 14px; height: 14px; fill: #fff; }
+    .info-card ul {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .info-card li {
+      font-size: 0.78rem;
+      color: #4b5563;
+      padding-left: 14px;
+      position: relative;
+      line-height: 1.5;
+    }
+    .info-card li::before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 7px;
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #6366f1;
+    }
+
+    /* ─── Legend ─── */
+    .legend-bar {
+      padding: 14px 36px;
+      background: #f8f9fb;
+      border-top: 1px solid #e8ecf1;
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+      font-size: 0.72rem;
+      color: #6b7280;
+    }
+    .legend-bar .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .legend-bar .legend-swatch {
+      width: 14px;
+      height: 14px;
+      border-radius: 4px;
+    }
+
+    /* ─── Tooltip ─── */
+    .tooltip {
+      display: none;
+      position: fixed;
+      background: #1a1a2e;
+      color: #fff;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 0.75rem;
+      z-index: 1000;
+      max-width: 280px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+      pointer-events: none;
+      line-height: 1.6;
+    }
+    .tooltip.visible { display: block; }
+    .tooltip .tt-title {
+      font-weight: 700;
+      font-size: 0.82rem;
+      margin-bottom: 4px;
+      color: #c4b5fd;
+    }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 900px) {
+      body { padding: 12px; }
+      .gantt-chart { grid-template-columns: 240px 1fr; }
+      .gantt-left .col-header,
+      .gantt-row-left {
+        grid-template-columns: 40px 30px 1fr 70px 50px;
+      }
+      .info-sidebar { grid-template-columns: 1fr; }
+    }
+
+    /* ─── Sprint Colors ─── */
+    .sprint-1 { background: #22c55e; }
+    .sprint-2 { background: #3b82f6; }
+    .sprint-3 { background: #f59e0b; }
+    .sprint-4 { background: #ef4444; }
+    .sprint-5 { background: #8b5cf6; }
+    .sprint-6 { background: #ec4899; }
+    .sprint-7 { background: #14b8a6; }
+    .sprint-8 { background: #f97316; }
+
+    .bar-sprint-1 { background: linear-gradient(135deg, #22c55e, #16a34a); }
+    .bar-sprint-2 { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+    .bar-sprint-3 { background: linear-gradient(135deg, #f59e0b, #d97706); }
+    .bar-sprint-4 { background: linear-gradient(135deg, #ef4444, #dc2626); }
+    .bar-sprint-5 { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+    .bar-sprint-6 { background: linear-gradient(135deg, #ec4899, #db2777); }
+    .bar-sprint-7 { background: linear-gradient(135deg, #14b8a6, #0d9488); }
+    .bar-sprint-8 { background: linear-gradient(135deg, #f97316, #ea580c); }
+
+    .role-backend { background: #dbeafe; color: #2563eb; }
+    .role-frontend { background: #dcfce7; color: #16a34a; }
+    .role-qa { background: #fef3c7; color: #d97706; }
+
+    .avatar-adriano { background: linear-gradient(135deg, #3b82f6, #6366f1); }
+    .avatar-franco { background: linear-gradient(135deg, #22c55e, #14b8a6); }
+    .avatar-waldyr { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+  </style>
+</head>
+<body>
+
+<div class="gantt-wrapper">
+  <!-- Header -->
+  <div class="gantt-header">
+    <div class="gh-icon">
+      <svg viewBox="0 0 16 16"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+    </div>
+    <div class="title-block">
+      <h1><span class="num">3)</span> Gestión de Actividades de GitHub con Hitos <span style="font-size:0.85rem;color:#6b7280;font-weight:500;">(estilo Gantt)</span></h1>
+      <div class="subtitle">Milestones + cronograma de Issues &nbsp;│&nbsp; <strong>Proyecto: Helpdesk NexaCorp — Sistema de Tickets</strong></div>
+    </div>
+  </div>
+
+  <!-- Meta Bar -->
+  <div class="meta-bar">
+    <div class="meta-item">
+      <span class="label">Duración total</span>
+      <span class="value">112 días (16 semanas)</span>
+    </div>
+    <div class="meta-item">
+      <span class="label">Estructura</span>
+      <span class="value">8 sprints de 2 semanas</span>
+    </div>
+    <div class="sprint-badges">
+      <span class="badge-label">Hitos en GitHub:</span>
+      <span class="sprint-badge sprint-1">Sprint 1</span>
+      <span class="sprint-badge sprint-2">Sprint 2</span>
+      <span class="sprint-badge sprint-3">Sprint 3</span>
+      <span class="sprint-badge sprint-4">Sprint 4</span>
+      <span class="sprint-badge sprint-5">Sprint 5</span>
+      <span class="sprint-badge sprint-6">Sprint 6</span>
+      <span class="sprint-badge sprint-7">Sprint 7</span>
+      <span class="sprint-badge sprint-8">Sprint 8</span>
+    </div>
+  </div>
+
+  <!-- Team Strip -->
+  <div class="team-strip">
+    <div class="team-member">
+      <div class="avatar avatar-adriano">AX</div>
+      <div class="info">
+        <div class="name">adriano08-xc</div>
+        <span class="role role-backend">Backend / BD</span>
+      </div>
+    </div>
+    <div class="team-member">
+      <div class="avatar avatar-franco">FD</div>
+      <div class="info">
+        <div class="name">franco27-dev</div>
+        <span class="role role-frontend">Frontend / UX</span>
+      </div>
+    </div>
+    <div class="team-member">
+      <div class="avatar avatar-waldyr">WG</div>
+      <div class="info">
+        <div class="name">GJG16 (Waldyr)</div>
+        <span class="role role-qa">QA / DevOps</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Chart -->
+  <div class="gantt-chart">
+    <!-- Left Panel -->
+    <div class="gantt-left">
+      <div class="col-header">
+        <span>Hito</span>
+        <span>Issue</span>
+        <span>Actividad (Issue)</span>
+        <span>Responsable</span>
+        <span>Duración</span>
+      </div>
+      <div id="left-rows"></div>
+    </div>
+
+    <!-- Right Panel -->
+    <div class="gantt-right">
+      <div class="timeline-header" id="timeline-header"></div>
+      <div class="timeline-body" id="timeline-body"></div>
+    </div>
+  </div>
+
+  <!-- Info Sidebar -->
+  <div class="info-sidebar">
+    <div class="info-card">
+      <h3>
+        <span class="icon"><svg viewBox="0 0 16 16"><path d="M8 0a8 8 0 100 16A8 8 0 008 0zm1 12H7V7h2v5zM8 6a1 1 0 110-2 1 1 0 010 2z"/></svg></span>
+        Los hitos agrupan Issues por sprint
+      </h3>
+      <ul>
+        <li>Cada barra representa la duración real de una actividad</li>
+        <li>GitHub permite ver avance temporal, responsables y dependencias de trabajo</li>
+        <li>El color de la barra indica a qué sprint pertenece</li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h3>
+        <span class="icon"><svg viewBox="0 0 16 16"><path d="M8 0a8 8 0 100 16A8 8 0 008 0zm1 12H7V7h2v5zM8 6a1 1 0 110-2 1 1 0 010 2z"/></svg></span>
+        Cómo se usa en GitHub
+      </h3>
+      <ul>
+        <li><strong>Milestone</strong> = agrupación por objetivo o sprint</li>
+        <li><strong>Issue</strong> = actividad individual</li>
+        <li><strong>Fecha de inicio + duración</strong> = seguimiento temporal</li>
+        <li><strong>Responsable</strong> = miembro asignado del equipo</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Legend -->
+  <div class="legend-bar">
+    <span style="font-weight:700;color:#374151;">Rango del cronograma:</span>
+    <span>30 de marzo al 19 de julio de 2026</span>
+    <span style="margin-left:auto;color:#9ca3af;">Las barras muestran la duración estimada por actividad</span>
+  </div>
+</div>
+
+<!-- Tooltip -->
+<div class="tooltip" id="tooltip"></div>
+
+<script>
+// ─── Data ───
+const TEAM = {
+  'adriano08-xc': { initials: 'AX', avatarClass: 'avatar-adriano', role: 'Backend / BD' },
+  'franco27-dev':  { initials: 'FD', avatarClass: 'avatar-franco',  role: 'Frontend / UX' },
+  'GJG16':         { initials: 'WG', avatarClass: 'avatar-waldyr',  role: 'QA / DevOps' },
+};
+
+const SPRINTS = [
+  { id: 1, name: 'Sprint 1 — Base e Infraestructura',     start: '2026-03-30', end: '2026-04-12', color: '#22c55e' },
+  { id: 2, name: 'Sprint 2 — Autenticación',              start: '2026-04-13', end: '2026-04-26', color: '#3b82f6' },
+  { id: 3, name: 'Sprint 3 — Roles y Protección',         start: '2026-04-27', end: '2026-05-10', color: '#f59e0b' },
+  { id: 4, name: 'Sprint 4 — CRUD de Tickets',            start: '2026-05-11', end: '2026-05-24', color: '#ef4444' },
+  { id: 5, name: 'Sprint 5 — Kanban',                     start: '2026-05-25', end: '2026-06-07', color: '#8b5cf6' },
+  { id: 6, name: 'Sprint 6 — Dashboard Métricas',         start: '2026-06-08', end: '2026-06-21', color: '#ec4899' },
+  { id: 7, name: 'Sprint 7 — Pruebas E2E',                start: '2026-06-22', end: '2026-07-05', color: '#14b8a6' },
+  { id: 8, name: 'Sprint 8 — Despliegue y Cierre',        start: '2026-07-06', end: '2026-07-19', color: '#f97316' },
+];
+
+const TASKS = [
+  { sprint: 1, issue: '#1', title: 'Inicializar Backend con FastAPI y Conexión a MongoDB', responsible: 'adriano08-xc', start: '2026-03-30', duration: 10, type: 'Feature', priority: 'Alta' },
+  { sprint: 1, issue: '#2', title: 'Modelado de Esquemas Pydantic y Colecciones MongoDB',  responsible: 'adriano08-xc', start: '2026-04-03', duration: 7,  type: 'Tarea',   priority: 'Alta' },
+  { sprint: 2, issue: '#3', title: 'Autenticación JWT con Access/Refresh Tokens',          responsible: 'adriano08-xc', start: '2026-04-13', duration: 10, type: 'Feature', priority: 'Alta' },
+  { sprint: 3, issue: '#4', title: 'Control RBAC en API y Protección de Rutas',            responsible: 'adriano08-xc', start: '2026-04-27', duration: 8,  type: 'Feature', priority: 'Alta' },
+  { sprint: 3, issue: '#5', title: 'Guard de Rutas y Menús por Rol en Angular',            responsible: 'franco27-dev', start: '2026-04-29', duration: 6,  type: 'Feature', priority: 'Alta' },
+  { sprint: 4, issue: '#6', title: 'CRUD de Tickets en Angular y Servicios HTTP',          responsible: 'franco27-dev', start: '2026-05-11', duration: 10, type: 'Feature', priority: 'Alta' },
+  { sprint: 5, issue: '#7', title: 'Tablero Kanban Drag-and-Drop para Tickets',            responsible: 'franco27-dev', start: '2026-05-25', duration: 10, type: 'Feature', priority: 'Alta' },
+  { sprint: 6, issue: '#8', title: 'Dashboard de Métricas Operativas',                     responsible: 'GJG16',        start: '2026-06-08', duration: 7,  type: 'Feature', priority: 'Media' },
+  { sprint: 7, issue: '#9', title: 'Suite de Pruebas E2E con Playwright',                  responsible: 'GJG16',        start: '2026-06-22', duration: 10, type: 'Tarea',   priority: 'Alta' },
+  { sprint: 8, issue: '#10', title: 'Pipeline de Despliegue y Validación Final',           responsible: 'GJG16',        start: '2026-07-06', duration: 8,  type: 'Tarea',   priority: 'Alta' },
+];
+
+// ─── Timeline Config ───
+const TIMELINE_START = new Date('2026-03-30');
+const TIMELINE_END   = new Date('2026-07-19');
+const DAY_WIDTH = 38; // px per day
+
+function daysBetween(a, b) {
+  return Math.round((new Date(b) - new Date(a)) / (1000 * 60 * 60 * 24));
+}
+
+const TOTAL_DAYS = daysBetween(TIMELINE_START, TIMELINE_END) + 1;
+const TOTAL_WIDTH = TOTAL_DAYS * DAY_WIDTH;
+
+// ─── Build Timeline Header ───
+function buildTimelineHeader() {
+  const header = document.getElementById('timeline-header');
+  const months = {};
+  
+  for (let d = 0; d < TOTAL_DAYS; d++) {
+    const date = new Date(TIMELINE_START);
+    date.setDate(date.getDate() + d);
+    const key = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`;
+    if (!months[key]) {
+      const monthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Sept','Octubre','Nov','Dic'];
+      months[key] = { label: `${monthNames[date.getMonth()]} ${date.getFullYear()}`, weeks: [] };
+    }
+  }
+
+  // Group weeks within months
+  let current = new Date(TIMELINE_START);
+  while (current <= TIMELINE_END) {
+    const weekStart = new Date(current);
+    const weekEnd = new Date(current);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    if (weekEnd > TIMELINE_END) weekEnd.setTime(TIMELINE_END.getTime());
+    
+    const key = `${weekStart.getFullYear()}-${String(weekStart.getMonth()+1).padStart(2,'0')}`;
+    if (months[key]) {
+      const daysInWeek = daysBetween(weekStart, weekEnd) + 1;
+      months[key].weeks.push({
+        label: `${weekStart.getDate()} ${['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'][weekStart.getMonth()]}`,
+        width: daysInWeek * DAY_WIDTH
+      });
+    }
+    current.setDate(current.getDate() + 7);
+  }
+
+  // Build better: use actual week boundaries
+  header.innerHTML = '';
+  
+  // Simple approach: render each week as a column
+  const weeks = [];
+  let d = new Date(TIMELINE_START);
+  while (d <= TIMELINE_END) {
+    const wStart = new Date(d);
+    const wEnd = new Date(d);
+    wEnd.setDate(wEnd.getDate() + 6);
+    if (wEnd > TIMELINE_END) wEnd.setTime(TIMELINE_END.getTime());
+    weeks.push({ start: new Date(wStart), end: new Date(wEnd), days: daysBetween(wStart, wEnd) + 1 });
+    d.setDate(d.getDate() + 7);
+  }
+
+  // Group weeks by month
+  const monthGroups = [];
+  let lastMonth = -1;
+  const monthNames = ['Marzo','Abril','Mayo','Junio','Julio'];
+  
+  weeks.forEach(w => {
+    const m = w.start.getMonth();
+    if (m !== lastMonth) {
+      monthGroups.push({ month: m, year: w.start.getFullYear(), weeks: [w] });
+      lastMonth = m;
+    } else {
+      monthGroups[monthGroups.length - 1].weeks.push(w);
+    }
+  });
+
+  const fullMonthNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const shortMonthNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  
+  monthGroups.forEach(mg => {
+    const totalWidth = mg.weeks.reduce((s, w) => s + w.days * DAY_WIDTH, 0);
+    const div = document.createElement('div');
+    div.className = 'timeline-month';
+    div.style.width = totalWidth + 'px';
+    
+    let weeksHTML = '';
+    mg.weeks.forEach(w => {
+      weeksHTML += `<div class="week" style="width:${w.days * DAY_WIDTH}px">${w.start.getDate()} ${shortMonthNames[w.start.getMonth()]}</div>`;
+    });
+    
+    div.innerHTML = `
+      <div class="month-label">${fullMonthNames[mg.month]} ${mg.year}</div>
+      <div class="weeks">${weeksHTML}</div>
+    `;
+    header.appendChild(div);
+  });
+}
+
+// ─── Build Left Panel & Timeline Bars ───
+function buildChart() {
+  const leftContainer = document.getElementById('left-rows');
+  const bodyContainer = document.getElementById('timeline-body');
+  leftContainer.innerHTML = '';
+  bodyContainer.innerHTML = '';
+  bodyContainer.style.width = TOTAL_WIDTH + 'px';
+
+  // Draw vertical grid lines (per week)
+  let gridDay = 0;
+  let dd = new Date(TIMELINE_START);
+  while (dd <= TIMELINE_END) {
+    if (gridDay > 0 && dd.getDay() === 1) { // Monday
+      const line = document.createElement('div');
+      line.className = 'grid-col week-line';
+      line.style.left = (gridDay * DAY_WIDTH) + 'px';
+      bodyContainer.appendChild(line);
+    }
+    dd.setDate(dd.getDate() + 1);
+    gridDay++;
+  }
+
+  // Today marker
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  if (today >= TIMELINE_START && today <= TIMELINE_END) {
+    const todayOffset = daysBetween(TIMELINE_START, today);
+    const marker = document.createElement('div');
+    marker.className = 'today-marker';
+    marker.style.left = (todayOffset * DAY_WIDTH + DAY_WIDTH / 2) + 'px';
+    bodyContainer.appendChild(marker);
+  }
+
+  let rowIndex = 0;
+  const groupedBySprint = {};
+  TASKS.forEach(t => {
+    if (!groupedBySprint[t.sprint]) groupedBySprint[t.sprint] = [];
+    groupedBySprint[t.sprint].push(t);
+  });
+
+  SPRINTS.forEach(sprint => {
+    const tasks = groupedBySprint[sprint.id] || [];
+    if (tasks.length === 0) return;
+
+    // Sprint group header (left)
+    const sprintHeader = document.createElement('div');
+    sprintHeader.className = 'sprint-group-header';
+    sprintHeader.innerHTML = `
+      <span class="sprint-dot sprint-${sprint.id}"></span>
+      <span>${sprint.name}</span>
+    `;
+    leftContainer.appendChild(sprintHeader);
+
+    // Sprint header row (right) — just empty space
+    const sprintTimelineRow = document.createElement('div');
+    sprintTimelineRow.className = 'timeline-row sprint-header-row';
+    sprintTimelineRow.style.width = TOTAL_WIDTH + 'px';
+    
+    // Draw sprint range highlight
+    const sprintStartOffset = daysBetween(TIMELINE_START, new Date(sprint.start));
+    const sprintDays = daysBetween(new Date(sprint.start), new Date(sprint.end)) + 1;
+    const highlight = document.createElement('div');
+    highlight.style.cssText = `
+      position: absolute;
+      left: ${sprintStartOffset * DAY_WIDTH}px;
+      width: ${sprintDays * DAY_WIDTH}px;
+      height: 100%;
+      background: ${sprint.color}08;
+      border-left: 2px solid ${sprint.color}30;
+      border-right: 2px solid ${sprint.color}30;
+    `;
+    sprintTimelineRow.appendChild(highlight);
+    bodyContainer.appendChild(sprintTimelineRow);
+
+    tasks.forEach(task => {
+      // Left row
+      const member = TEAM[task.responsible];
+      const row = document.createElement('div');
+      row.className = 'gantt-row-left';
+      row.innerHTML = `
+        <span class="hito">S${task.sprint}</span>
+        <span class="issue-num">${task.issue}</span>
+        <span class="task-name" title="${task.title}">${task.title}</span>
+        <div class="responsible">
+          <span class="avatar-sm ${member.avatarClass}">${member.initials}</span>
+          <span class="resp-name">${task.responsible.split('-')[0]}</span>
+        </div>
+        <span class="duration">${task.duration} días</span>
+      `;
+      leftContainer.appendChild(row);
+
+      // Timeline row
+      const timelineRow = document.createElement('div');
+      timelineRow.className = 'timeline-row';
+      timelineRow.style.width = TOTAL_WIDTH + 'px';
+
+      const taskStart = new Date(task.start);
+      const offset = daysBetween(TIMELINE_START, taskStart);
+      const barWidth = task.duration * DAY_WIDTH;
+
+      const bar = document.createElement('div');
+      bar.className = `bar bar-sprint-${task.sprint}`;
+      bar.style.left = (offset * DAY_WIDTH) + 'px';
+      bar.style.width = barWidth + 'px';
+
+      // Format dates for bar label
+      const endDate = new Date(taskStart);
+      endDate.setDate(endDate.getDate() + task.duration - 1);
+      const shortM = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+      const barLabel = barWidth > 120
+        ? `${taskStart.getDate()}-${endDate.getDate()} ${shortM[endDate.getMonth()]}`
+        : `${task.duration}d`;
+      bar.innerHTML = `<span class="bar-dates">${barLabel}</span>`;
+
+      // Tooltip data
+      bar.dataset.title = task.title;
+      bar.dataset.responsible = task.responsible;
+      bar.dataset.type = task.type;
+      bar.dataset.priority = task.priority;
+      bar.dataset.start = `${taskStart.getDate()}/${taskStart.getMonth()+1}/${taskStart.getFullYear()}`;
+      bar.dataset.end = `${endDate.getDate()}/${endDate.getMonth()+1}/${endDate.getFullYear()}`;
+      bar.dataset.duration = task.duration;
+
+      bar.addEventListener('mouseenter', showTooltip);
+      bar.addEventListener('mousemove', moveTooltip);
+      bar.addEventListener('mouseleave', hideTooltip);
+
+      timelineRow.appendChild(bar);
+      bodyContainer.appendChild(timelineRow);
+      rowIndex++;
+    });
+  });
+}
+
+// ─── Tooltip ───
+const tooltip = document.getElementById('tooltip');
+function showTooltip(e) {
+  const d = e.target.dataset;
+  tooltip.innerHTML = `
+    <div class="tt-title">${d.title}</div>
+    <div>📌 <strong>Responsable:</strong> ${d.responsible}</div>
+    <div>🏷️ <strong>Tipo:</strong> ${d.type} &nbsp;│&nbsp; <strong>Prioridad:</strong> ${d.priority}</div>
+    <div>📅 <strong>Inicio:</strong> ${d.start} → <strong>Fin:</strong> ${d.end}</div>
+    <div>⏱️ <strong>Duración:</strong> ${d.duration} días</div>
+  `;
+  tooltip.classList.add('visible');
+}
+function moveTooltip(e) {
+  tooltip.style.left = (e.clientX + 16) + 'px';
+  tooltip.style.top = (e.clientY - 10) + 'px';
+}
+function hideTooltip() { tooltip.classList.remove('visible'); }
+
+// ─── Init ───
+buildTimelineHeader();
+buildChart();
+
+// Sync scroll between left and right panels
+const ganttLeft = document.querySelector('.gantt-left');
+const ganttRight = document.querySelector('.gantt-right');
+ganttRight.addEventListener('scroll', () => {
+  // Only horizontal scroll matters for right panel
+});
+</script>
+</body>
+</html>

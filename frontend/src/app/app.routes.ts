@@ -1,20 +1,43 @@
 import { Routes } from '@angular/router';
-import { LoginComponent } from './components/login/login.component';
-import { DashboardComponent } from './components/dashboard/dashboard.component';
-import { TicketsListComponent } from './components/tickets/tickets-list/tickets-list.component';
-import { TicketFormComponent } from './components/tickets/ticket-form/ticket-form.component';
-import { ReportsComponent } from './components/reports/reports.component';
-import { KanbanComponent } from './components/tickets/kanban/kanban.component';
 import { AuthGuard } from './guards/auth.guard';
 
 export const routes: Routes = [
   { path: '', redirectTo: 'login', pathMatch: 'full' },
-  { path: 'login', component: LoginComponent },
-  { path: 'dashboard', component: DashboardComponent, canActivate: [AuthGuard] },
-  { path: 'tickets', component: TicketsListComponent, canActivate: [AuthGuard] },
-  { path: 'tickets/kanban', component: KanbanComponent, canActivate: [AuthGuard], data: { roles: ['admin', 'agent'] } },
-  { path: 'tickets/new', component: TicketFormComponent, canActivate: [AuthGuard] },
-  { path: 'tickets/:id/edit', component: TicketFormComponent, canActivate: [AuthGuard] },
-  { path: 'reports', component: ReportsComponent, canActivate: [AuthGuard], data: { role: 'admin' } },
+  { 
+    path: 'login', 
+    loadComponent: () => import('./components/login/login.component').then(m => m.LoginComponent) 
+  },
+  { 
+    path: 'dashboard', 
+    loadComponent: () => import('./components/dashboard/dashboard.component').then(m => m.DashboardComponent), 
+    canActivate: [AuthGuard] 
+  },
+  { 
+    path: 'tickets', 
+    loadComponent: () => import('./components/tickets/tickets-list/tickets-list.component').then(m => m.TicketsListComponent), 
+    canActivate: [AuthGuard] 
+  },
+  { 
+    path: 'tickets/kanban', 
+    loadComponent: () => import('./components/tickets/kanban/kanban.component').then(m => m.KanbanComponent), 
+    canActivate: [AuthGuard], 
+    data: { roles: ['admin', 'agent'] } 
+  },
+  { 
+    path: 'tickets/new', 
+    loadComponent: () => import('./components/tickets/ticket-form/ticket-form.component').then(m => m.TicketFormComponent), 
+    canActivate: [AuthGuard] 
+  },
+  { 
+    path: 'tickets/:id/edit', 
+    loadComponent: () => import('./components/tickets/ticket-form/ticket-form.component').then(m => m.TicketFormComponent), 
+    canActivate: [AuthGuard] 
+  },
+  { 
+    path: 'reports', 
+    loadComponent: () => import('./components/reports/reports.component').then(m => m.ReportsComponent), 
+    canActivate: [AuthGuard], 
+    data: { role: 'admin' } 
+  },
   { path: '**', redirectTo: 'login' }
 ];

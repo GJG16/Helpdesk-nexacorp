@@ -210,7 +210,7 @@ h1 {
   text-align: center;
 }
 
-.priority {
+.badge {
   display: inline-flex;
   align-items: center;
   padding: 0.3rem 0.65rem;
@@ -219,10 +219,31 @@ h1 {
   font-weight: 700;
 }
 
-.priority[data-priority="baja"] { background: #dcfce7; color: #15803d; }
-.priority[data-priority="media"] { background: #e0f2fe; color: #0369a1; }
-.priority[data-priority="alta"] { background: #fee2e2; color: #b91c1c; }
-.priority[data-priority="critica"] { background: #fce7f3; color: #be185d; }
+.badge[data-priority="baja"] { background: #dcfce7; color: #15803d; }
+.badge[data-priority="media"] { background: #e0f2fe; color: #0369a1; }
+.badge[data-priority="alta"] { background: #fee2e2; color: #b91c1c; }
+.badge[data-priority="critica"] { background: #fce7f3; color: #be185d; }
+
+.type-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid currentColor;
+}
+.type-badge[data-type="incidente"] { color: #dc2626; background: rgba(220, 38, 38, 0.05); }
+.type-badge[data-type="requerimiento"] { color: #0ea5e9; background: rgba(14, 165, 233, 0.05); }
+
+.card-badges {
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
 
 @media (max-width: 1200px) {
   .board-grid {

@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from backend.database import get_database
 from backend.models.schemas import AuditAction, AuditLog, TicketReport
-from backend.routes.usuarios import get_current_user
+from backend.dependencies import get_current_user
 
 router = APIRouter(prefix="/api/reports", tags=["reports"])
 
@@ -92,3 +92,44 @@ async def get_audit_logs(
         }
         for log in raw_logs
     ]
+
+import csv
+import io
+from fastapi.responses import StreamingResponse
+
+@router.get("/export-tickets")
+async def export_tickets(db=Depends(get_database), current_user=Depends(get_current_user)):
+    """Exportar todos los tickets a CSV (solo admin)"""
+    if current_user.get("rol") != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo administradores pueden exportar",
+        )
+        
+    tickets = await db.tickets.find().to_list(length=None)
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    
+    # Headers
+    writer.writerow(["ID", "Titulo", "Estado", "Prioridad", "Usuario ID", "Agente Asignado ID", "Fecha Creacion", "Fecha Vencimiento SLA"])
+    
+    for t in tickets:
+        writer.writerow([
+            str(t.get("_id")),
+            t.get("titulo", ""),
+            t.get("estado", ""),
+            t.get("prioridad", ""),
+            t.get("usuario_id", ""),
+            t.get("asignado_a", ""),
+            t.get("fecha_creacion", ""),
+            t.get("fecha_vencimiento_sla", "")
+        ])
+        
+    output.seek(0)
+    
+    return StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv",
+        headers={"Content-Disposition": "attachment; filename=tickets_export.csv"}
+    )

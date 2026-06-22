@@ -1,6 +1,11 @@
-<div class="form-container">
-  <div class="form-card">
-    <h2>{{ isEditMode ? 'Editar' : 'Crear' }} Ticket</h2>
+<div [class.modal-backdrop]="modalTicketId" (click)="modalTicketId && closeModal()">
+  <div class="form-container" [class.modal-container]="modalTicketId" (click)="$event.stopPropagation()">
+    <div class="modal-header" *ngIf="modalTicketId">
+      <h2>Editar Ticket #{{ ticketId?.substring(0, 6) }}</h2>
+      <button class="close-btn" type="button" (click)="closeModal()">✕</button>
+    </div>
+    <div class="form-card" [class.no-shadow]="modalTicketId">
+      <h2 *ngIf="!modalTicketId">{{ isEditMode ? 'Editar' : 'Crear' }} Ticket</h2>
 
     <form [formGroup]="ticketForm" (ngSubmit)="onSubmit()" data-testid="ticket-form">
       <div *ngIf="error" class="alert alert-danger">
@@ -25,14 +30,12 @@
 
       <div class="form-group">
         <label for="descripcion">Descripción *</label>
-        <textarea
-          id="descripcion"
+        <quill-editor
           formControlName="descripcion"
           placeholder="Describe el problema en detalle"
-          rows="5"
+          [modules]="{ toolbar: [['bold', 'italic', 'underline'], [{'list': 'ordered'}, {'list': 'bullet'}], ['clean']] }"
           [class.is-invalid]="f['descripcion'].invalid && f['descripcion'].touched"
-          data-testid="input-descripcion"
-        ></textarea>
+        ></quill-editor>
         <div *ngIf="f['descripcion'].invalid && f['descripcion'].touched" class="invalid-feedback">
           <div *ngIf="f['descripcion'].errors?.['required']">La descripción es requerida</div>
           <div *ngIf="f['descripcion'].errors?.['minlength']">Mínimo 10 caracteres</div>
@@ -40,6 +43,18 @@
       </div>
 
       <div class="form-row">
+        <div class="form-group">
+          <label for="tipo">Tipo *</label>
+          <select
+            id="tipo"
+            formControlName="tipo"
+            [class.is-invalid]="f['tipo'].invalid && f['tipo'].touched"
+            data-testid="select-tipo"
+          >
+            <option value="incidente">Incidente</option>
+            <option value="requerimiento">Requerimiento</option>
+          </select>
+        </div>
         <div class="form-group">
           <label for="prioridad">Prioridad *</label>
           <select
@@ -90,24 +105,63 @@
     </form>
     
     <!-- Sección de Comentarios -->
-    <div class="comments-section" *ngIf="isEditMode" data-testid="comments-section">
-      <h3>Historial de Conversación y Notas</h3>
-      <div class="comments-list">
-        <div *ngIf="comments.length === 0" class="no-comments">No hay comentarios ni notas aún.</div>
-        
-        <div class="comment-item" *ngFor="let c of comments" [ngClass]="{'comment-mine': c.usuario_id === currentUser?.id, 'comment-agent': c.rol_autor === 'agent' || c.rol_autor === 'admin'}">
-          <div class="comment-header">
-            <strong>{{ c.nombre_autor || 'Usuario' }}</strong>
-            <span class="comment-role">{{ c.rol_autor }}</span>
-            <span class="comment-date">{{ c.fecha_creacion | date:'short' }}</span>
+      <div class="timeline-section" data-testid="timeline-section" *ngIf="ticketId">
+        <h3>Línea de Tiempo</h3>
+        <div class="timeline-list">
+          <ng-container *ngFor="let item of timelineItems">
+            <!-- HISTORY ITEM -->
+            <div class="timeline-item history-item" *ngIf="item.type === 'history'">
+              <div class="timeline-icon">📝</div>
+              <div class="timeline-content">
+                <span class="history-text">
+                  El campo <strong>{{ item.data.campo }}</strong> cambió de 
+                  <code>{{ item.data.valor_anterior || 'nada' }}</code> a 
+                  <code>{{ item.data.valor_nuevo }}</code>
+                </span>
+                <span class="timeline-date">{{ item.date | date:'short' }}</span>
+              </div>
+            </div>
+
+            <!-- COMMENT ITEM -->
+            <div class="timeline-item comment-item" *ngIf="item.type === 'comment'" [ngClass]="{'comment-mine': item.data.usuario_id === currentUser?.id, 'comment-agent': item.data.rol_autor === 'agent' || item.data.rol_autor === 'admin'}">
+              <div class="comment-header">
+                <strong>{{ item.data.nombre_autor || 'Usuario' }}</strong>
+                <span class="comment-role">{{ item.data.rol_autor }}</span>
+                <span class="comment-date">{{ item.date | date:'short' }}</span>
+              </div>
+              <div class="comment-body" [innerHTML]="item.data.texto"></div>
+            </div>
+          </ng-container>
+        </div>
+      </div>
+      <div class="attachments-section" data-testid="attachments-section">
+        <h3>Archivos Adjuntos</h3>
+        <div class="attachment-list">
+          <div *ngIf="attachments.length === 0" class="no-attachments">No hay archivos adjuntos.</div>
+          <div class="attachment-item" *ngFor="let file of attachments">
+            <a [href]="apiUrl + file.url" target="_blank">{{ file.filename }}</a>
+            <span class="attachment-date">{{ file.uploaded_at | date:'short' }}</span>
           </div>
-          <div class="comment-body">{{ c.texto }}</div>
+        </div>
+
+        <div class="drop-zone" 
+             (dragover)="onDragOver($event)" 
+             (dragleave)="onDragLeave($event)" 
+             (drop)="onDrop($event)"
+             [class.dragover]="isDragover">
+          <p>Arrastra y suelta archivos aquí para adjuntarlos, o haz clic para seleccionar.</p>
+          <input type="file" (change)="onFileSelected($event)" style="display: none;" #fileInput>
+          <button type="button" class="btn btn-secondary btn-small" (click)="fileInput.click()">Seleccionar archivo</button>
         </div>
       </div>
       
       <div class="comment-input-area">
-        <textarea [(ngModel)]="newCommentTexto" placeholder="Escribe un comentario o nota..." rows="3" class="form-control textarea" data-testid="input-new-comment"></textarea>
-        <button (click)="submitComment()" class="btn btn-primary btn-comment" [disabled]="submittingComment || !newCommentTexto.trim()" data-testid="btn-submit-comment">
+        <quill-editor
+          [(ngModel)]="newCommentTexto"
+          placeholder="Escribe un comentario o nota..."
+          [modules]="{ toolbar: [['bold', 'italic', 'underline'], [{'list': 'ordered'}, {'list': 'bullet'}], ['clean']] }"
+        ></quill-editor>
+        <button (click)="submitComment()" class="btn btn-primary btn-comment" [disabled]="submittingComment || !newCommentTexto?.trim()" data-testid="btn-submit-comment">
           {{ submittingComment ? 'Enviando...' : 'Enviar mensaje' }}
         </button>
       </div>

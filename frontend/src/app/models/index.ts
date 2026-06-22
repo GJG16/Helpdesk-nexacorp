@@ -7,11 +7,27 @@ export interface User {
   activo?: boolean;
 }
 
+export interface UserUpdate {
+  nombre?: string;
+  email?: string;
+  rol?: string;
+  password?: string;
+}
+
 export interface TokenResponse {
   access_token: string;
   refresh_token: string;
   token_type: string;
   user: User;
+}
+
+export type TicketType = 'incidente' | 'requerimiento';
+
+export interface TicketAttachment {
+  filename: string;
+  url: string;
+  uploaded_at: Date;
+  uploaded_by: string;
 }
 
 export interface Ticket {
@@ -20,20 +36,26 @@ export interface Ticket {
   descripcion: string;
   estado: 'abierto' | 'en_progreso' | 'resuelto' | 'cerrado';
   prioridad: 'baja' | 'media' | 'alta' | 'critica';
+  tipo: TicketType;
   usuario_id: string;
   asignado_a?: string;
   fecha_creacion?: Date;
   fecha_actualizacion?: Date;
   fecha_resolucion?: Date;
+  fecha_vencimiento_sla?: Date;
+  adjuntos?: TicketAttachment[];
+  historial?: any[];
 }
 
 export interface TicketFilter {
   estado?: string;
+  tipo?: string;
   usuario_id?: string;
   asignado_a?: string;
   prioridad?: string;
   fecha_desde?: Date;
   fecha_hasta?: Date;
+  busqueda?: string;
 }
 
 export type TicketStatus = 'abierto' | 'en_progreso' | 'resuelto' | 'cerrado';
