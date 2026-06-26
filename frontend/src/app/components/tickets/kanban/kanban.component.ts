@@ -6,6 +6,8 @@ import { takeUntil } from 'rxjs/operators';
 import { AuthService } from '../../../services/auth.service';
 import { TicketService } from '../../../services/ticket.service';
 import { Ticket, User } from '../../../models';
+import { TicketFormComponent } from '../ticket-form/ticket-form.component';
+import { SkeletonComponent } from '../../ui/skeleton/skeleton';
 
 interface KanbanColumn {
   key: Ticket['estado'];
@@ -13,12 +15,10 @@ interface KanbanColumn {
   tickets: Ticket[];
 }
 
-import { TicketFormComponent } from '../ticket-form/ticket-form.component';
-
 @Component({
-  selector: 'app-ticket-kanban',
+  selector: 'app-kanban',
   standalone: true,
-  imports: [CommonModule, RouterModule, TicketFormComponent],
+  imports: [CommonModule, RouterModule, TicketFormComponent, SkeletonComponent],
   templateUrl: './kanban.component.html',
   styleUrls: ['./kanban.component.css']
 })
@@ -61,7 +61,7 @@ export class KanbanComponent implements OnInit, OnDestroy {
   }
 
   trackById(index: number, ticket: Ticket): string {
-    return ticket.id;
+    return ticket.id || '';
   }
 
   loadTickets(): void {
@@ -183,9 +183,7 @@ export class KanbanComponent implements OnInit, OnDestroy {
     return this.authService.isAgent() && ticket.asignado_a !== this.currentUser?.id;
   }
 
-  navigateToDashboard(): void {
-    this.router.navigate(['/dashboard']);
-  }
+
 
   viewTicket(id: string | undefined): void {
     if (id) {
