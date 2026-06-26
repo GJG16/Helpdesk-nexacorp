@@ -9,11 +9,13 @@ import { Ticket, TicketStatus, User } from '../../../models';
 import { AuthService } from '../../../services/auth.service';
 import { TicketCreateModalComponent } from '../ticket-create-modal/ticket-create-modal.component';
 import { TicketFormComponent } from '../ticket-form/ticket-form.component';
+import { ButtonComponent } from '../../ui/button/button';
+import { SkeletonComponent } from '../../ui/skeleton/skeleton';
 
 @Component({
   selector: 'app-tickets-list',
   standalone: true,
-  imports: [CommonModule, RouterModule, FormsModule, TicketCreateModalComponent, TicketFormComponent],
+  imports: [CommonModule, RouterModule, FormsModule, TicketCreateModalComponent, TicketFormComponent, ButtonComponent, SkeletonComponent],
   templateUrl: './tickets-list.component.html',
   styleUrls: ['./tickets-list.component.css']
 })
@@ -60,7 +62,7 @@ export class TicketsListComponent implements OnInit, OnDestroy {
   }
 
   trackById(index: number, ticket: Ticket): string {
-    return ticket.id;
+    return ticket.id || '';
   }
 
   loadTickets(): void {
@@ -169,14 +171,6 @@ export class TicketsListComponent implements OnInit, OnDestroy {
     this.router.navigate(['/tickets/new']);
   }
 
-  navigateToDashboard(): void {
-    this.router.navigate(['/dashboard']);
-  }
-
-  logout(): void {
-    this.authService.logout();
-    this.router.navigate(['/login']);
-  }
 
   isAdmin(): boolean {
     return this.authService.isAdmin();
@@ -197,6 +191,14 @@ export class TicketsListComponent implements OnInit, OnDestroy {
     return new Date() > new Date(ticket.fecha_vencimiento_sla);
   }
 
+  isSlaWarning(ticket: Ticket): boolean {
+    if (!ticket.fecha_vencimiento_sla || ticket.estado === 'resuelto' || ticket.estado === 'cerrado') {
+      return false;
+    }
+    const diff = new Date(ticket.fecha_vencimiento_sla).getTime() - new Date().getTime();
+    return diff > 0 && diff <= (4 * 60 * 60 * 1000); // 4 horas
+  }
+
   stripHtml(html: string): string {
     if (!html) return '';
     return html.replace(/<[^>]*>?/gm, '');
@@ -214,7 +216,5 @@ export class TicketsListComponent implements OnInit, OnDestroy {
     return `${hours}h ${minutes}m`;
   }
 
-  goToKanban(): void {
-    this.router.navigate(['/tickets/kanban']);
-  }
+
 }
