@@ -2,6 +2,10 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 @import "quill/dist/quill.snow.css";
 
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
 	color-scheme: dark;
 	--bg-0: #000000;
