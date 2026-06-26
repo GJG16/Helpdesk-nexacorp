@@ -1,0 +1,45 @@
+name: Kanban Automator (Issue Ops)
+
+on:
+  pull_request:
+    types: [opened, reopened, closed, review_requested]
+  issues:
+    types: [opened, closed, assigned]
+
+jobs:
+  automate-kanban:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Auto-move Issue/PR based on event
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const eventName = context.eventName;
+          const action = context.payload.action;
+          
+          console.log(`Triggered by ${eventName} with action ${action}`);
+          
+          // Este es un script Issue Ops base.
+          // Para integrarlo completamente con GitHub Projects V2
+          // se requeriría el ID del proyecto y uso de la API GraphQL.
+          // 
+          // Ejemplo lógico:
+          // Si eventName === 'issues' y action === 'opened' -> Mover a 'To Do'
+          // Si eventName === 'pull_request' y action === 'opened' -> Mover a 'In Progress' o 'Code Review'
+          // Si eventName === 'pull_request' y action === 'closed' y pr.merged -> Mover a 'Done'
+          
+          if (eventName === 'pull_request') {
+            const pr = context.payload.pull_request;
+            if (action === 'opened') {
+              console.log(`Pull Request #${pr.number} abierto. (Aquí moveríamos el ticket a 'In Progress')`);
+            } else if (action === 'closed' && pr.merged) {
+              console.log(`Pull Request #${pr.number} mergeado. (Aquí moveríamos el ticket a 'Done')`);
+            }
+          } else if (eventName === 'issues') {
+            const issue = context.payload.issue;
+            if (action === 'opened') {
+              console.log(`Issue #${issue.number} creado. (Aquí moveríamos el ticket a 'To Do')`);
+            } else if (action === 'closed') {
+              console.log(`Issue #${issue.number} cerrado. (Aquí moveríamos el ticket a 'Done')`);
+            }
+          }
