@@ -6,11 +6,13 @@ import { TicketService } from '../../services/ticket.service';
 import { User, Ticket } from '../../models';
 
 import { TicketCreateModalComponent } from '../tickets/ticket-create-modal/ticket-create-modal.component';
+import { ButtonComponent } from '../ui/button/button';
+import { SkeletonComponent } from '../ui/skeleton/skeleton';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule, TicketCreateModalComponent],
+  imports: [CommonModule, RouterModule, TicketCreateModalComponent, ButtonComponent, SkeletonComponent],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
