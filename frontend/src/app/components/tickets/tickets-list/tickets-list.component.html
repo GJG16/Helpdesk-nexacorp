@@ -1,112 +1,215 @@
-<div class="tickets-container">
-  <div class="tickets-topbar">
+<div class="flex flex-col h-full space-y-6">
+  
+  <!-- Header Section -->
+  <div class="flex items-center justify-between">
     <div>
-      <p class="eyebrow">Tablero operativo</p>
-      <h1>Tickets</h1>
+      <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Listado de Tickets</h1>
+      <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Gestiona y filtra todas las solicitudes del sistema.</p>
     </div>
-        <div class="topbar-actions">
-      <button (click)="navigateToDashboard()" class="btn-ghost">Dashboard</button>
-      <button *ngIf="isAgent() || isAdmin()" (click)="goToKanban()" class="btn-ghost">Kanban</button>
-      <button *ngIf="isAgent() || isUser()" (click)="isModalOpen = true" class="btn-create" data-testid="btn-create-ticket">+ Nuevo Ticket</button>
-      <button (click)="logout()" class="btn-logout">Logout</button>
-        </div>
+    <div class="flex items-center space-x-3">
+      <app-button *ngIf="isAgent() || isUser()" variant="primary" (click)="isModalOpen = true">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+        </svg>
+        Nuevo Ticket
+      </app-button>
+    </div>
   </div>
 
-  <div class="workspace-grid">
-    <section class="filters-panel">
-      <h2>Filtros</h2>
-      <div class="filters">
-        <div class="filter-group">
-          <label for="searchTerm">Buscar</label>
-          <input
-            type="text"
-            id="searchTerm"
-            [(ngModel)]="searchTerm"
-            (input)="onFilterChange()"
-            placeholder="Buscar por título"
-            class="filter-input"
-          />
-        </div>
-
-        <div class="filter-group">
-          <label for="filterEstado">Estado</label>
-          <select
-            id="filterEstado"
-            [(ngModel)]="filterEstado"
-            (change)="onFilterChange()"
-            class="filter-select"
-          >
-            <option value="">Todos</option>
-            <option value="abierto">Abierto</option>
-            <option value="en_progreso">En progreso</option>
-            <option value="resuelto">Resuelto</option>
-            <option value="cerrado">Cerrado</option>
-          </select>
-        </div>
-
-        <div class="filter-group">
-          <label for="filterPrioridad">Prioridad</label>
-          <select
-            id="filterPrioridad"
-            [(ngModel)]="filterPrioridad"
-            (change)="onFilterChange()"
-            class="filter-select"
-          >
-            <option value="">Todas</option>
-            <option value="baja">Baja</option>
-            <option value="media">Media</option>
-            <option value="alta">Alta</option>
-            <option value="critica">Crítica</option>
-          </select>
+  <!-- Filters Toolbar -->
+  <div class="bg-white dark:bg-slate-950 p-4 rounded-lg shadow-sm border border-slate-200 dark:border-slate-800">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      
+      <!-- Buscar -->
+      <div>
+        <label for="searchTerm" class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Buscar</label>
+        <div class="relative">
+          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <svg class="h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </div>
+          <input type="text" id="searchTerm" [(ngModel)]="searchTerm" (input)="onFilterChange()" placeholder="Buscar por título..."
+            class="block w-full pl-10 pr-3 py-2 border border-slate-300 dark:border-slate-700 rounded-md leading-5 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm transition-colors" />
         </div>
       </div>
-    </section>
 
-    <section class="board-panel">
-      <div *ngIf="loading" class="loading">Cargando tickets...</div>
-
-      <div *ngIf="!loading && filteredTickets.length > 0" class="tickets-table">
-        <table>
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Título</th>
-              <th>Descripción</th>
-              <th>Estado</th>
-              <th>Prioridad</th>
-              <th>Solicitante</th>
-              <th>Asignado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let ticket of filteredTickets">
-              <td>#{{ ticket.id?.substring(0, 6) }}</td>
-              <td class="title">{{ ticket.titulo }}</td>
-              <td class="description">{{ ticket.descripcion | slice:0:50 }}...</td>
-              <td><span class="badge" [attr.data-state]="ticket.estado">{{ ticket.estado }}</span></td>
-              <td><span class="badge" [attr.data-priority]="ticket.prioridad">{{ ticket.prioridad }}</span></td>
-              <td>{{ ticket.usuario_id.substring(0, 6) }}</td>
-              <td>{{ ticket.asignado_a ? ticket.asignado_a.substring(0, 6) : 'Sin asignar' }}</td>
-              <td class="actions">
-                <button *ngIf="canSelfAssign(ticket)" (click)="assignToMe(ticket)" class="btn-small btn-assign">Asignarme</button>
-                <button *ngIf="canEditTicket(ticket)" (click)="editTicket(ticket.id)" class="btn-small btn-edit">Editar</button>
-                <button *ngIf="canDeleteTicket(ticket)" (click)="deleteTicket(ticket.id)" class="btn-small btn-delete">Eliminar</button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+      <!-- Filtro Estado -->
+      <div>
+        <label for="filterEstado" class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Estado</label>
+        <select id="filterEstado" [(ngModel)]="filterEstado" (change)="onFilterChange()"
+          class="block w-full pl-3 pr-10 py-2 text-base border border-slate-300 dark:border-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md bg-white dark:bg-slate-900 text-slate-900 dark:text-white transition-colors">
+          <option value="">Todos los estados</option>
+          <option value="abierto">Abierto</option>
+          <option value="en_progreso">En progreso</option>
+          <option value="resuelto">Resuelto</option>
+          <option value="cerrado">Cerrado</option>
+        </select>
       </div>
 
-      <div *ngIf="!loading && filteredTickets.length === 0" class="empty-state">
-        No se encontraron tickets.
+      <!-- Filtro Tipo -->
+      <div>
+        <label for="filterTipo" class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Tipo</label>
+        <select id="filterTipo" [(ngModel)]="filterTipo" (change)="onFilterChange()"
+          class="block w-full pl-3 pr-10 py-2 text-base border border-slate-300 dark:border-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md bg-white dark:bg-slate-900 text-slate-900 dark:text-white transition-colors">
+          <option value="">Todos los tipos</option>
+          <option value="incidente">Incidente</option>
+          <option value="requerimiento">Requerimiento</option>
+        </select>
       </div>
-    </section>
+
+      <!-- Filtro Prioridad -->
+      <div>
+        <label for="filterPrioridad" class="block text-xs font-medium text-slate-700 dark:text-slate-300 mb-1">Prioridad</label>
+        <select id="filterPrioridad" [(ngModel)]="filterPrioridad" (change)="onFilterChange()"
+          class="block w-full pl-3 pr-10 py-2 text-base border border-slate-300 dark:border-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md bg-white dark:bg-slate-900 text-slate-900 dark:text-white transition-colors">
+          <option value="">Todas</option>
+          <option value="baja">Baja</option>
+          <option value="media">Media</option>
+          <option value="alta">Alta</option>
+          <option value="critica">Crítica</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Data Table Container -->
+  <div class="bg-white dark:bg-slate-950 rounded-lg shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col flex-1">
+    <div class="flex-1 overflow-x-auto">
+      
+      <!-- Skeleton Loading State -->
+      <div *ngIf="loading" class="p-6 space-y-4">
+        <app-skeleton type="rectangular" height="3rem" *ngFor="let i of [1,2,3,4,5,6]"></app-skeleton>
+      </div>
+
+      <!-- Tabla Principal -->
+      <table *ngIf="!loading && filteredTickets.length > 0" class="min-w-full divide-y divide-slate-200 dark:divide-slate-800">
+        <thead class="bg-slate-50 dark:bg-slate-900/50">
+          <tr>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">ID / Título</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Detalles</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Estado / SLA</th>
+            <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Asignación</th>
+            <th scope="col" class="px-6 py-3 text-right text-xs font-semibold text-slate-500 uppercase tracking-wider">Acciones</th>
+          </tr>
+        </thead>
+        <tbody class="bg-white dark:bg-slate-950 divide-y divide-slate-200 dark:divide-slate-800">
+          <tr *ngFor="let ticket of filteredTickets; trackBy: trackById" class="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group">
+            
+            <!-- Col 1: ID y Titulo -->
+            <td class="px-6 py-4">
+              <div class="flex flex-col">
+                <span class="text-xs text-slate-500 font-mono mb-1">#{{ ticket.id?.substring(0, 8) }}</span>
+                <span class="text-sm font-medium text-slate-900 dark:text-white">{{ ticket.titulo }}</span>
+              </div>
+            </td>
+
+            <!-- Col 2: Tipo y Desc -->
+            <td class="px-6 py-4">
+              <div class="flex flex-col space-y-1.5">
+                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium tracking-wide uppercase bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 w-max">
+                  {{ ticket.tipo === 'incidente' ? 'Incidente' : 'Requerimiento' }}
+                </span>
+                <p class="text-xs text-slate-500 dark:text-slate-400 truncate max-w-xs" [title]="stripHtml(ticket.descripcion)">
+                  {{ stripHtml(ticket.descripcion) | slice:0:45 }}{{ stripHtml(ticket.descripcion).length > 45 ? '...' : '' }}
+                </p>
+              </div>
+            </td>
+
+            <!-- Col 3: Estado, Prioridad y SLA -->
+            <td class="px-6 py-4">
+              <div class="flex flex-col space-y-2 items-start">
+                <div class="flex items-center space-x-2">
+                  <!-- Badge de Estado -->
+                  <span *ngIf="ticket.estado === 'abierto'" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700 dark:bg-red-500/10 dark:text-red-400 border border-red-200 dark:border-red-500/20">Abierto</span>
+                  <span *ngIf="ticket.estado === 'en_progreso'" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20">En Progreso</span>
+                  <span *ngIf="ticket.estado === 'resuelto'" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">Resuelto</span>
+                  <span *ngIf="ticket.estado === 'cerrado'" class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-700 dark:bg-slate-500/10 dark:text-slate-400 border border-slate-200 dark:border-slate-500/20">Cerrado</span>
+                  
+                  <!-- Badge de Prioridad -->
+                  <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400" [ngClass]="{'text-red-500': ticket.prioridad === 'critica' || ticket.prioridad === 'alta'}">{{ ticket.prioridad }}</span>
+                </div>
+                
+                <!-- SLA Badge -->
+                <span *ngIf="ticket.fecha_vencimiento_sla && ticket.estado !== 'resuelto' && ticket.estado !== 'cerrado'" 
+                  class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold mt-1 shadow-sm border" 
+                  [ngClass]="{
+                    'bg-red-50 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-500/20': isSlaBreached(ticket),
+                    'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-500/10 dark:text-amber-400 dark:border-amber-500/20': isSlaWarning(ticket) && !isSlaBreached(ticket),
+                    'bg-slate-50 text-slate-600 border-slate-200 dark:bg-slate-800 dark:text-slate-400 dark:border-slate-700': !isSlaWarning(ticket) && !isSlaBreached(ticket)
+                  }">
+                  <svg class="mr-1 h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" [class.animate-pulse]="isSlaBreached(ticket) || isSlaWarning(ticket)">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {{ getSlaTimeRemaining(ticket) }}
+                </span>
+              </div>
+            </td>
+
+            <!-- Col 4: Asignación -->
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="flex items-center">
+                <div class="flex-shrink-0 h-8 w-8 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-xs font-medium text-slate-600 dark:text-slate-300 uppercase">
+                  {{ ticket.asignado_a ? ticket.asignado_a.substring(0, 2) : '?' }}
+                </div>
+                <div class="ml-3">
+                  <p class="text-sm font-medium text-slate-900 dark:text-white">
+                    {{ ticket.asignado_a ? ticket.asignado_a.substring(0, 8) : 'Sin asignar' }}
+                  </p>
+                  <p class="text-xs text-slate-500">
+                    Sol: {{ ticket.usuario_id.substring(0, 6) }}
+                  </p>
+                </div>
+              </div>
+            </td>
+
+            <!-- Col 5: Acciones -->
+            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <div class="flex items-center justify-end space-x-2 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                <app-button *ngIf="canSelfAssign(ticket)" variant="secondary" (click)="assignToMe(ticket)">
+                  Tomar
+                </app-button>
+                <app-button *ngIf="canEditTicket(ticket)" variant="secondary" (click)="editTicket(ticket.id)">
+                  Editar
+                </app-button>
+                <button *ngIf="canDeleteTicket(ticket)" (click)="deleteTicket(ticket.id)" class="text-red-500 hover:text-red-700 p-2 rounded-md hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors" title="Eliminar">
+                  <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Empty State -->
+      <div *ngIf="!loading && filteredTickets.length === 0" class="flex flex-col items-center justify-center p-16 text-center">
+        <div class="bg-slate-100 dark:bg-slate-800 p-4 rounded-full mb-4">
+          <svg class="w-12 h-12 text-slate-400 dark:text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+          </svg>
+        </div>
+        <h3 class="text-lg font-medium text-slate-900 dark:text-white">No se encontraron tickets</h3>
+        <p class="mt-1 text-sm text-slate-500 max-w-sm">No hay tickets que coincidan con los filtros actuales. Intenta cambiar los criterios de búsqueda.</p>
+        <div class="mt-6">
+          <app-button variant="secondary" (click)="searchTerm=''; filterEstado=''; filterPrioridad=''; filterTipo=''; applyFilters()">Limpiar Filtros</app-button>
+        </div>
+      </div>
+
+    </div>
   </div>
 </div>
 
+<!-- Modales -->
 <app-ticket-create-modal 
   *ngIf="isModalOpen" 
   (close)="isModalOpen = false" 
   (ticketCreated)="loadTickets()">
 </app-ticket-create-modal>
+
+<app-ticket-form
+  *ngIf="editingTicketId"
+  [modalTicketId]="editingTicketId"
+  (close)="closeEditModal()">
+</app-ticket-form>

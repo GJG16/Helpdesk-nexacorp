@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status
-from datetime import datetime, timedelta
+from fastapi import APIRouter, Depends, HTTPException, status, Request
+from datetime import datetime, timedelta, timezone
 from backend.models.schemas import LoginRequest, TokenResponse, User, UserCreate
 from backend.database import get_database
 from backend.security import (
@@ -9,11 +9,13 @@ from backend.security import (
     verify_password,
 )
 from bson.objectid import ObjectId
+from backend.main import limiter
 
 router = APIRouter(prefix="/api/auth", tags=["authentication"])
 
 @router.post("/register", response_model=User)
-async def register(user_data: UserCreate, db=Depends(get_database)):
+@limiter.limit("3/minute")
+async def register(request: Request, user_data: UserCreate, db=Depends(get_database)):
     """Registrar nuevo usuario"""
     
     # Verificar si el email ya existe
@@ -26,10 +28,11 @@ async def register(user_data: UserCreate, db=Depends(get_database)):
     
     # Crear nuevo usuario
     user_dict = user_data.model_dump()
+    user_dict.pop("rol", None) # Security fix: don't allow users to pass rol in registration
     user_dict["rol"] = "user"
     user_dict["password_hash"] = hash_password(user_dict.pop("password"))
     user_dict["activo"] = True
-    user_dict["fecha_creacion"] = datetime.utcnow()
+    user_dict["fecha_creacion"] = datetime.now(timezone.utc)
     
     result = await db.usuarios.insert_one(user_dict)
     
@@ -40,7 +43,8 @@ async def register(user_data: UserCreate, db=Depends(get_database)):
     return created_user
 
 @router.post("/login", response_model=TokenResponse)
-async def login(credentials: LoginRequest, db=Depends(get_database)):
+@limiter.limit("5/minute")
+async def login(request: Request, credentials: LoginRequest, db=Depends(get_database)):
     """Login de usuario"""
     
     # Buscar usuario por email

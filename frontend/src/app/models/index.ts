@@ -5,6 +5,21 @@ export interface User {
   rol: 'admin' | 'agent' | 'user';
   fecha_creacion?: Date;
   activo?: boolean;
+  departamento?: string;
+}
+
+export interface UserUpdate {
+  nombre?: string;
+  email?: string;
+  rol?: string;
+  password?: string;
+}
+
+export interface PaginatedResponse<T> {
+  items: T[];
+  total: number;
+  page: number;
+  pages: number;
 }
 
 export interface TokenResponse {
@@ -14,26 +29,41 @@ export interface TokenResponse {
   user: User;
 }
 
+export type TicketType = 'incidente' | 'requerimiento';
+
+export interface TicketAttachment {
+  filename: string;
+  url: string;
+  uploaded_at: Date;
+  uploaded_by: string;
+}
+
 export interface Ticket {
   id?: string;
   titulo: string;
   descripcion: string;
   estado: 'abierto' | 'en_progreso' | 'resuelto' | 'cerrado';
   prioridad: 'baja' | 'media' | 'alta' | 'critica';
+  tipo: TicketType;
   usuario_id: string;
   asignado_a?: string;
   fecha_creacion?: Date;
   fecha_actualizacion?: Date;
   fecha_resolucion?: Date;
+  fecha_vencimiento_sla?: Date;
+  adjuntos?: TicketAttachment[];
+  historial?: any[];
 }
 
 export interface TicketFilter {
   estado?: string;
+  tipo?: string;
   usuario_id?: string;
   asignado_a?: string;
   prioridad?: string;
   fecha_desde?: Date;
   fecha_hasta?: Date;
+  busqueda?: string;
 }
 
 export type TicketStatus = 'abierto' | 'en_progreso' | 'resuelto' | 'cerrado';

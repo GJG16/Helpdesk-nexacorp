@@ -2,20 +2,28 @@ import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { AuditLog, Ticket, TicketFilter, TicketReport, TicketComment } from '../models';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root'
 })
 export class TicketService {
-  private apiUrl = 'http://localhost:8000/api';
+  private apiUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) {}
 
   /**
    * Obtener todos los tickets
    */
-  getTickets(): Observable<Ticket[]> {
-    return this.http.get<Ticket[]>(`${this.apiUrl}/tickets/`);
+  getTickets(): Observable<{items: Ticket[], total: number, page: number, pages: number}> {
+    return this.http.get<{items: Ticket[], total: number, page: number, pages: number}>(`${this.apiUrl}/tickets/`);
+  }
+
+  /**
+   * Obtener métricas rápidas de tickets
+   */
+  getTicketStats(): Observable<any> {
+    return this.http.get<any>(`${this.apiUrl}/tickets/stats`);
   }
 
   /**
@@ -49,8 +57,8 @@ export class TicketService {
   /**
    * Filtrar tickets
    */
-  filterTickets(filter: TicketFilter): Observable<Ticket[]> {
-    return this.http.post<Ticket[]>(`${this.apiUrl}/tickets/filter`, filter);
+  filterTickets(filter: TicketFilter): Observable<{items: Ticket[], total: number, page: number, pages: number}> {
+    return this.http.post<{items: Ticket[], total: number, page: number, pages: number}>(`${this.apiUrl}/tickets/filter`, filter);
   }
 
   /**
@@ -86,5 +94,13 @@ export class TicketService {
    */
   addComment(ticketId: string, texto: string): Observable<TicketComment> {
     return this.http.post<TicketComment>(`${this.apiUrl}/tickets/${ticketId}/comments`, { texto });
+  }
+  /**
+   * Subir adjunto a un ticket
+   */
+  uploadAttachment(ticketId: string, file: File): Observable<{filename: string, url: string}> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return this.http.post<{filename: string, url: string}>(`${this.apiUrl}/tickets/${ticketId}/adjuntos`, formData);
   }
 }

@@ -37,6 +37,8 @@ class LoginRequest(BaseModel):
     password: str
 
 
+
+
 class TokenResponse(BaseModel):
     access_token: str
     refresh_token: str
@@ -48,6 +50,11 @@ class TicketStatus(str, Enum):
     EN_PROGRESO = "en_progreso"
     RESUELTO = "resuelto"
     CERRADO = "cerrado"
+
+class TicketType(str, Enum):
+    INCIDENTE = "incidente"
+    REQUERIMIENTO = "requerimiento"
+
 
 
 class Priority(str, Enum):
@@ -61,6 +68,7 @@ class TicketBase(BaseModel):
     descripcion: str = Field(..., min_length=10)
     estado: TicketStatus = TicketStatus.ABIERTO
     prioridad: Priority = Priority.MEDIA
+    tipo: TicketType = TicketType.INCIDENTE
     asignado_a: Optional[str] = None
 
 class TicketCreate(TicketBase):
@@ -72,16 +80,19 @@ class TicketUpdate(BaseModel):
     descripcion: Optional[str] = Field(default=None, min_length=10)
     estado: Optional[TicketStatus] = None
     prioridad: Optional[Priority] = None
+    tipo: Optional[TicketType] = None
     asignado_a: Optional[str] = None
 
 
 class TicketFilter(BaseModel):
     estado: Optional[TicketStatus] = None
     prioridad: Optional[Priority] = None
+    tipo: Optional[TicketType] = None
     usuario_id: Optional[str] = None
     asignado_a: Optional[str] = None
     fecha_desde: Optional[datetime] = None
     fecha_hasta: Optional[datetime] = None
+    busqueda: Optional[str] = None
 
 class Ticket(TicketBase):
     id: Optional[str] = None
@@ -89,10 +100,12 @@ class Ticket(TicketBase):
     fecha_creacion: Optional[datetime] = None
     fecha_actualizacion: Optional[datetime] = None
     fecha_resolucion: Optional[datetime] = None
+    fecha_vencimiento_sla: Optional[datetime] = None
+    csat_rating: Optional[int] = Field(default=None, ge=1, le=5)
+    csat_comment: Optional[str] = None
     
     class Config:
         from_attributes = True
-
 
 class TicketCommentBase(BaseModel):
     texto: str = Field(..., min_length=1, max_length=1000)
@@ -142,3 +155,35 @@ class TicketReport(BaseModel):
     total_tickets: int
     by_state: List[TicketReportByState]
     by_agent: List[TicketReportByAgent]
+
+class KBArticleBase(BaseModel):
+    titulo: str = Field(..., min_length=5, max_length=200)
+    contenido: str = Field(..., min_length=10)
+    categoria: str = Field(..., min_length=2, max_length=100)
+
+class KBArticleCreate(KBArticleBase):
+    pass
+
+class KBArticle(KBArticleBase):
+    id: Optional[str] = None
+    autor_id: str
+    vistas: int = 0
+    fecha_creacion: Optional[datetime] = None
+    fecha_actualizacion: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+class MacroBase(BaseModel):
+    nombre: str = Field(..., min_length=3, max_length=100)
+    contenido: str = Field(..., min_length=5)
+
+class MacroCreate(MacroBase):
+    pass
+
+class Macro(MacroBase):
+    id: Optional[str] = None
+    autor_id: str
+    fecha_creacion: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True

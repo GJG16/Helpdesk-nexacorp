@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterModule, Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
@@ -6,11 +6,13 @@ import { TicketService } from '../../services/ticket.service';
 import { User, Ticket } from '../../models';
 
 import { TicketCreateModalComponent } from '../tickets/ticket-create-modal/ticket-create-modal.component';
+import { ButtonComponent } from '../ui/button/button';
+import { SkeletonComponent } from '../ui/skeleton/skeleton';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterModule, TicketCreateModalComponent],
+  imports: [CommonModule, RouterModule, TicketCreateModalComponent, ButtonComponent, SkeletonComponent],
   templateUrl: './dashboard.component.html',
   styleUrls: ['./dashboard.component.css']
 })
@@ -31,7 +33,8 @@ export class DashboardComponent implements OnInit {
   constructor(
     private authService: AuthService,
     private ticketService: TicketService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {
     // Esperar al observable de usuario en ngOnInit para asegurar token cargado
   }
@@ -45,31 +48,36 @@ export class DashboardComponent implements OnInit {
       } else {
         this.tickets = [];
         this.loading = false;
+        this.cdr.detectChanges();
       }
     });
   }
 
   loadDashboard(): void {
     this.loading = true;
+    
+    // Fetch recent tickets
     this.ticketService.getTickets().subscribe({
-      next: (tickets) => {
-        this.tickets = tickets.slice(0, 5); // Últimos 5 tickets
-        this.calculateStats(tickets);
+      next: (response) => {
+        this.tickets = response.items.slice(0, 5); // Últimos 5 tickets
+        this.cdr.detectChanges();
+      },
+      error: (error) => console.error('Error al cargar tickets:', error)
+    });
+
+    // Fetch real stats
+    this.ticketService.getTicketStats().subscribe({
+      next: (stats) => {
+        this.stats = stats;
         this.loading = false;
+        this.cdr.detectChanges();
       },
       error: (error) => {
-        console.error('Error al cargar tickets:', error);
+        console.error('Error al cargar stats:', error);
         this.loading = false;
+        this.cdr.detectChanges();
       }
     });
-  }
-
-  calculateStats(tickets: Ticket[]): void {
-    this.stats.total = tickets.length;
-    this.stats.abiertos = tickets.filter(t => t.estado === 'abierto').length;
-    this.stats.en_progreso = tickets.filter(t => t.estado === 'en_progreso').length;
-    this.stats.resueltos = tickets.filter(t => t.estado === 'resuelto').length;
-    this.stats.cerrados = tickets.filter(t => t.estado === 'cerrado').length;
   }
 
   logout(): void {

@@ -1,9 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { ChangeDetectorRef, Component, OnInit, OnDestroy } from '@angular/core';
 import { Router, RouterModule } from '@angular/router';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { AuthService } from '../../../services/auth.service';
 import { TicketService } from '../../../services/ticket.service';
 import { Ticket, User } from '../../../models';
+import { TicketFormComponent } from '../ticket-form/ticket-form.component';
+import { SkeletonComponent } from '../../ui/skeleton/skeleton';
 
 interface KanbanColumn {
   key: Ticket['estado'];
@@ -12,13 +16,13 @@ interface KanbanColumn {
 }
 
 @Component({
-  selector: 'app-ticket-kanban',
+  selector: 'app-kanban',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [CommonModule, RouterModule, TicketFormComponent, SkeletonComponent],
   templateUrl: './kanban.component.html',
   styleUrls: ['./kanban.component.css']
 })
-export class KanbanComponent implements OnInit {
+export class KanbanComponent implements OnInit, OnDestroy {
   currentUser: User | null = null;
   loading = true;
   error = '';
@@ -29,11 +33,15 @@ export class KanbanComponent implements OnInit {
     { key: 'resuelto', label: 'Resuelto', tickets: [] },
     { key: 'cerrado', label: 'Cerrado', tickets: [] },
   ];
+  editingTicketId: string | null = null;
+
+  private destroy$ = new Subject<void>();
 
   constructor(
     private authService: AuthService,
     private ticketService: TicketService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {
     this.currentUser = this.authService.getCurrentUser();
   }
@@ -47,17 +55,28 @@ export class KanbanComponent implements OnInit {
     this.loadTickets();
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  trackById(index: number, ticket: Ticket): string {
+    return ticket.id || '';
+  }
+
   loadTickets(): void {
     this.loading = true;
-    this.ticketService.getTickets().subscribe({
-      next: (tickets) => {
-        this.tickets = tickets;
+    this.ticketService.getTickets().pipe(takeUntil(this.destroy$)).subscribe({
+      next: (response: any) => {
+        this.tickets = response.items;
         this.groupTickets();
         this.loading = false;
+        this.cdr.detectChanges();
       },
-      error: () => {
+      error: (err) => {
         this.error = 'No fue posible cargar el tablero';
         this.loading = false;
+        this.cdr.detectChanges();
       }
     });
   }
@@ -107,11 +126,27 @@ export class KanbanComponent implements OnInit {
       return;
     }
 
+    // Estado original para rollback
+    const previousState = ticket.estado;
+    
+    // Actualización Optimista
+    ticket.estado = targetState;
+    this.groupTickets();
+    this.cdr.detectChanges();
+
     const payload: Partial<Ticket> = { estado: targetState };
 
     this.ticketService.updateTicket(ticket.id, payload).subscribe({
-      next: () => this.loadTickets(),
+      next: () => {
+        // En caso de éxito, podríamos recargar para ver la fecha de actualización real
+        // pero la UI ya respondió. Solo recargamos en background.
+        this.loadTickets();
+      },
       error: () => {
+        // Rollback
+        ticket.estado = previousState;
+        this.groupTickets();
+        this.cdr.detectChanges();
         this.error = 'No fue posible actualizar el ticket';
       }
     });
@@ -122,9 +157,19 @@ export class KanbanComponent implements OnInit {
       return;
     }
 
+    // Estado original para rollback
+    const previousAssignee = ticket.asignado_a;
+    
+    // Actualización optimista
+    ticket.asignado_a = this.currentUser.id;
+    this.cdr.detectChanges();
+
     this.ticketService.updateTicket(ticket.id, { asignado_a: this.currentUser.id }).subscribe({
       next: () => this.loadTickets(),
       error: () => {
+        // Rollback
+        ticket.asignado_a = previousAssignee;
+        this.cdr.detectChanges();
         this.error = 'No fue posible asignar el ticket';
       }
     });
@@ -138,8 +183,17 @@ export class KanbanComponent implements OnInit {
     return this.authService.isAgent() && ticket.asignado_a !== this.currentUser?.id;
   }
 
-  navigateToDashboard(): void {
-    this.router.navigate(['/dashboard']);
+
+
+  viewTicket(id: string | undefined): void {
+    if (id) {
+      this.editingTicketId = id;
+    }
+  }
+
+  closeEditModal(): void {
+    this.editingTicketId = null;
+    this.loadTickets();
   }
 
   getAssigneeLabel(ticket: Ticket): string {
@@ -174,6 +228,30 @@ export class KanbanComponent implements OnInit {
     };
 
     return labels[ticket.prioridad];
+  }
+
+  stripHtml(html: string): string {
+    if (!html) return '';
+    return html.replace(/<[^>]*>?/gm, '');
+  }
+
+  isSlaBreached(ticket: Ticket): boolean {
+    if (!ticket.fecha_vencimiento_sla || ticket.estado === 'resuelto' || ticket.estado === 'cerrado') {
+      return false;
+    }
+    return new Date() > new Date(ticket.fecha_vencimiento_sla);
+  }
+
+  getSlaTimeRemaining(ticket: Ticket): string {
+    if (!ticket.fecha_vencimiento_sla || ticket.estado === 'resuelto' || ticket.estado === 'cerrado') {
+      return '-';
+    }
+    const diff = new Date(ticket.fecha_vencimiento_sla).getTime() - new Date().getTime();
+    if (diff <= 0) return 'Vencido';
+    
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    return `${hours}h ${minutes}m`;
   }
 
   isAdmin(): boolean {

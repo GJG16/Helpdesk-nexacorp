@@ -1,99 +1,101 @@
-<div class="login-shell">
-  <section class="brand-panel">
-    <div class="brand-badge">
-      <span class="brand-mark">N</span>
-      <div>
-        <p class="brand-name">NexaCorp</p>
-        <p class="brand-subtitle">Helpdesk empresarial</p>
-      </div>
-    </div>
-
-    <div class="brand-copy">
-      <p class="eyebrow">Plataforma de operaciones</p>
-      <h1>Acceso seguro para equipos que necesitan orden, trazabilidad y respuesta rápida.</h1>
-      <p class="lead">
-        Centraliza tickets, seguimiento y métricas en una interfaz sobria, pensada para entornos corporativos.
-      </p>
-    </div>
-
-    <div class="brand-metrics">
-      <div>
-        <span class="metric-label">Disponibilidad</span>
-        <strong>99.98%</strong>
-      </div>
-      <div>
-        <span class="metric-label">Tiempos de respuesta</span>
-        <strong>Optimizado</strong>
-      </div>
-      <div>
-        <span class="metric-label">Seguridad</span>
-        <strong>JWT + roles</strong>
-      </div>
-    </div>
-  </section>
-
-  <section class="form-panel">
-    <div class="login-card">
-      <div class="card-header">
-        <p class="card-kicker">Bienvenido de nuevo</p>
-        <h2>Iniciar sesión</h2>
-        <p class="card-copy">Ingresa con tu cuenta corporativa para continuar.</p>
-      </div>
-
-      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="login-form">
-        <div *ngIf="error" class="alert alert-danger">
-          {{ error }}
-        </div>
-
-        <div class="form-group">
-          <label for="email">Correo corporativo</label>
-          <input
-            type="email"
-            class="form-control"
-            id="email"
-            formControlName="email"
-            placeholder="nombre@empresa.com"
-            [class.is-invalid]="submitted && f['email'].errors"
-          />
-          <div *ngIf="submitted && f['email'].errors" class="invalid-feedback">
-            <div *ngIf="f['email'].errors['required']">El correo es requerido</div>
-            <div *ngIf="f['email'].errors['email']">Ingresa un correo válido</div>
+<div class="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-4 sm:p-8">
+  <div class="max-w-6xl w-full bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col md:flex-row border border-slate-200 dark:border-slate-800">
+    
+    <!-- Left: Branding -->
+    <div class="w-full md:w-5/12 bg-indigo-600 dark:bg-indigo-900 p-8 lg:p-12 text-white flex flex-col justify-between relative overflow-hidden">
+      <!-- Decorativos -->
+      <div class="absolute top-0 right-0 -mt-16 -mr-16 w-64 h-64 bg-indigo-500/50 dark:bg-indigo-800/50 rounded-full blur-3xl opacity-50"></div>
+      <div class="absolute bottom-0 left-0 -mb-16 -ml-16 w-64 h-64 bg-blue-500/50 dark:bg-blue-800/50 rounded-full blur-3xl opacity-50"></div>
+      
+      <div class="relative z-10">
+        <div class="flex items-center space-x-3 mb-16">
+          <div class="w-10 h-10 bg-white text-indigo-600 rounded-lg flex items-center justify-center font-bold text-xl shadow-lg">N</div>
+          <div>
+            <h1 class="font-bold text-xl tracking-wide">NexaCorp</h1>
+            <p class="text-indigo-200 text-xs uppercase tracking-wider font-semibold">Helpdesk</p>
           </div>
         </div>
 
-        <div class="form-group">
-          <label for="password">Contraseña</label>
-          <input
-            type="password"
-            class="form-control"
-            id="password"
-            formControlName="password"
-            placeholder="••••••••"
-            [class.is-invalid]="submitted && f['password'].errors"
-          />
-          <div *ngIf="submitted && f['password'].errors" class="invalid-feedback">
-            <div *ngIf="f['password'].errors['required']">La contraseña es requerida</div>
-            <div *ngIf="f['password'].errors['minlength']">Debe tener al menos 8 caracteres</div>
-          </div>
+        <div>
+          <p class="text-indigo-200 font-semibold tracking-wider text-sm mb-4 uppercase">Plataforma Operativa</p>
+          <h2 class="text-3xl lg:text-4xl font-bold leading-tight mb-6 text-white">Centraliza, Diagnostica,<br/>y Resuelve.</h2>
+          <p class="text-indigo-100/80 text-base max-w-md leading-relaxed">
+            Nuestra plataforma ITSM te da el control total sobre los incidentes de la organización con un enfoque centrado en la velocidad y trazabilidad.
+          </p>
         </div>
+      </div>
 
-        <div class="form-actions">
-          <label class="remember-me">
-            <input type="checkbox" />
-            <span>Recordarme</span>
-          </label>
-          <a href="#" class="forgot-link">¿Olvidaste tu contraseña?</a>
+      <div class="relative z-10 mt-12 grid grid-cols-2 gap-6 border-t border-indigo-500/30 pt-8">
+        <div>
+          <p class="text-indigo-200 text-xs font-semibold uppercase mb-1">Disponibilidad</p>
+          <p class="text-xl font-bold">99.98%</p>
         </div>
-
-        <button type="submit" class="btn btn-primary w-100" [disabled]="loading">
-          <span *ngIf="!loading">Entrar al sistema</span>
-          <span *ngIf="loading">Validando acceso...</span>
-        </button>
-      </form>
-
-      <p class="register-link">
-        ¿No tienes cuenta? <a href="/register">Solicitar acceso</a>
-      </p>
+        <div>
+          <p class="text-indigo-200 text-xs font-semibold uppercase mb-1">Seguridad</p>
+          <p class="text-xl font-bold">Autenticación JWT</p>
+        </div>
+      </div>
     </div>
-  </section>
+
+    <!-- Right: Login Form -->
+    <div class="w-full md:w-7/12 p-8 lg:p-16 flex flex-col justify-center bg-white dark:bg-slate-900 relative">
+      <div class="max-w-md w-full mx-auto">
+        <div class="mb-10 text-center md:text-left">
+          <h2 class="text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white mb-2">Iniciar Sesión</h2>
+          <p class="text-slate-500 dark:text-slate-400">Ingresa tus credenciales corporativas para acceder al sistema.</p>
+        </div>
+
+        <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="space-y-6">
+          
+          <!-- Error Alert -->
+          <div *ngIf="error" class="p-4 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg text-sm text-red-600 dark:text-red-400 flex items-start">
+            <svg class="h-5 w-5 mr-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            <span>{{ error }}</span>
+          </div>
+
+          <!-- Email -->
+          <div>
+            <label for="email" class="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">Correo Corporativo</label>
+            <input type="email" id="email" formControlName="email" placeholder="nombre@nexacorp.com"
+              class="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors shadow-sm"
+              [ngClass]="{'border-red-500 ring-red-500 focus:ring-red-500 focus:border-red-500': submitted && f['email'].errors}" />
+            <div *ngIf="submitted && f['email'].errors" class="mt-2 text-sm text-red-600 dark:text-red-400 font-medium">
+              <span *ngIf="f['email'].errors['required']">El correo es obligatorio.</span>
+              <span *ngIf="f['email'].errors['email']">Debes ingresar un correo válido.</span>
+            </div>
+          </div>
+
+          <!-- Password -->
+          <div>
+            <div class="flex justify-between items-center mb-2">
+              <label for="password" class="block text-sm font-semibold text-slate-700 dark:text-slate-300">Contraseña</label>
+              <a href="#" class="text-sm font-medium text-indigo-600 hover:text-indigo-500 dark:text-indigo-400 transition-colors">¿La olvidaste?</a>
+            </div>
+            <input type="password" id="password" formControlName="password" placeholder="••••••••"
+              class="w-full px-4 py-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors shadow-sm"
+              [ngClass]="{'border-red-500 ring-red-500 focus:ring-red-500 focus:border-red-500': submitted && f['password'].errors}" />
+            <div *ngIf="submitted && f['password'].errors" class="mt-2 text-sm text-red-600 dark:text-red-400 font-medium">
+              <span *ngIf="f['password'].errors['required']">La contraseña es obligatoria.</span>
+              <span *ngIf="f['password'].errors['minlength']">Debe tener al menos 8 caracteres.</span>
+            </div>
+          </div>
+
+          <!-- Remember Me -->
+          <div class="flex items-center">
+            <input type="checkbox" id="remember" class="w-4 h-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500 bg-slate-50 dark:bg-slate-950 dark:border-slate-700">
+            <label for="remember" class="ml-2 text-sm text-slate-600 dark:text-slate-400 font-medium">Mantener sesión iniciada</label>
+          </div>
+
+          <!-- Submit Button -->
+          <button type="submit" [disabled]="loading"
+            class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-4 rounded-lg transition-all duration-200 shadow-lg shadow-indigo-500/30 flex justify-center items-center disabled:opacity-70 disabled:cursor-not-allowed mt-2">
+            <svg *ngIf="loading" class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+            <span>{{ loading ? 'Autenticando...' : 'Entrar al Sistema' }}</span>
+          </button>
+        </form>
+
+      </div>
+    </div>
+    
+  </div>
 </div>
