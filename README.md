@@ -78,5 +78,220 @@ npm start
 ## 🤝 Contribuciones
 Este proyecto fue desarrollado bajo estrictas revisiones de auditoría enfocadas en la prevención de fugas de memoria, optimización del DOM y arquitectura orientada a servicios. Se invita a crear *issues* o *pull requests* bajo el mismo estándar de calidad.
 
-## 📝 Licencia
+### Status Endpoints
+
+#### GET `/api/status`
+Verificar que el servidor está operativo.
+
+**Response:**
+```json
+{
+  "status": "online",
+  "service": "Helpdesk API",
+  "version": "1.0.0",
+  "timestamp": "2024-05-11T10:30:00",
+  "message": "Sistema de Gestión de Tickets operativo"
+}
+```
+
+#### GET `/api/health`
+Health check del servidor.
+
+**Response:**
+```json
+{
+  "status": "healthy",
+  "service": "Helpdesk API"
+}
+```
+
+### Tickets Endpoints (Próximos)
+- `GET /api/tickets` - Obtener todos los tickets
+- `GET /api/tickets/{id}` - Obtener ticket por ID
+- `POST /api/tickets` - Crear nuevo ticket
+- `PUT /api/tickets/{id}` - Actualizar ticket
+- `DELETE /api/tickets/{id}` - Eliminar ticket
+- `POST /api/tickets/filter` - Filtrar tickets
+
+---
+
+## 🌿 Gitflow
+
+Este proyecto sigue el flujo **Gitflow**:
+
+```
+main (producción)
+├── develop (integración)
+│   ├── feature/sprint1-setup (desarrollo)
+│   ├── feature/user-crud
+│   ├── feature/ticket-crud
+│   └── [otras features]
+└── hotfix/* (parches de emergencia)
+```
+
+### Ramas Principales
+
+- **main**: Código en producción, siempre estable
+- **develop**: Integración de features, rama de pre-producción
+- **feature/***: Ramas temporales para desarrollar nuevas funcionalidades
+
+### Flujo de Trabajo
+
+1. Crear rama de feature desde `develop`:
+   ```bash
+   git checkout -b feature/nueva-funcionalidad
+   ```
+
+2. Realizar cambios y commits:
+   ```bash
+   git add .
+   git commit -m "feat: descripción de cambios"
+   ```
+
+3. Mergear a `develop`:
+   ```bash
+   git checkout develop
+   git merge feature/nueva-funcionalidad
+   git push origin develop
+   ```
+
+4. Para release a producción:
+   ```bash
+   git checkout main
+   git merge develop
+   git push origin main
+   ```
+
+---
+
+## 📝 Esquemas de Datos
+
+### User
+```typescript
+{
+  id?: string;
+  nombre: string;
+  email: string;
+  rol: 'admin' | 'agent' | 'user';
+  fecha_creacion?: Date;
+}
+```
+
+### Ticket
+```typescript
+{
+  id?: string;
+  titulo: string;
+  descripcion: string;
+  estado: 'abierto' | 'en_progreso' | 'resuelto' | 'cerrado';
+  usuario_id: string;
+  fecha_creacion?: Date;
+  fecha_actualizacion?: Date;
+}
+```
+
+---
+
+## 🔐 Variables de Entorno
+
+Backend (`.env`):
+```env
+# MongoDB Configuration
+MONGODB_URL=mongodb://localhost:27017
+MONGODB_DB=helpdesk_db
+
+# Server Configuration
+SERVER_HOST=0.0.0.0
+SERVER_PORT=8000
+DEBUG=False
+
+# CORS Origins
+CORS_ORIGINS=["http://localhost:4200", "http://localhost:3000"]
+```
+
+---
+
+## 🧪 Pruebas
+
+### Backend - Probar API con cURL
+```bash
+# Verificar status
+curl http://localhost:8000/api/status
+
+# Acceder a documentación interactiva
+# Abre en navegador: http://localhost:8000/docs
+```
+
+### Frontend - Pruebas Unitarias
+```bash
+cd frontend
+ng test
+```
+
+---
+
+## 🐛 Troubleshooting
+
+### MongoDB no se conecta
+- Verificar que MongoDB está corriendo: `mongosh mongodb://localhost:27017`
+- Confirmar la URL en `.env`: `mongodb://localhost:27017`
+
+### CORS Error en Frontend
+- Verificar que CORS está configurado correctamente en `backend/config/settings.py`
+- Asegurar que la URL del frontend esté en `CORS_ORIGINS`
+
+### Angular no se compila
+```bash
+cd frontend
+npm install
+ng build
+```
+
+### Puerto 8000 o 4200 en uso
+```bash
+# Cambiar puerto en backend (main.py):
+uvicorn.run("main:app", host="0.0.0.0", port=8001)
+
+# Cambiar puerto en frontend (angular.json):
+"serve": {
+  "options": {
+    "port": 4201
+  }
+}
+```
+
+---
+
+## 📊 Matriz de Propiedades de Issues
+
+| # | Título del Issue | Tipo | Prioridad | Estado | Sprint | Responsable | Milestone |
+|---|---|---|---|---|---|---|---|
+| #1 | Configuración de Repositorios y Flujo Gitflow | Tarea | Alta | Done | 1 | @GJG16 | Sprint 1 |
+| #2 | Inicializar Backend con FastAPI y Conexión a MongoDB | Historia de usuario | Alta | Done | 1 | @franco27-dev | Sprint 1 |
+| #3 | Módulo de Autenticación y Gestión de Roles | Historia de usuario | Alta | Code Review | 2 | @franco27-dev | Sprint 2 |
+| #4 | Implementar vista de Creación y Listado de Tickets | Historia de usuario | Alta | Code Review | 3 | @adriano08-xc | Sprint 3 |
+| #6 | Configuración de Pipeline CI/CD para Pruebas Automáticas | Tarea | Media | Code Review | 4 | @GJG16 | Sprint 4 |
+| #7 | Panel de Control (Dashboard) para Administradores | Historia de usuario | Media | In Progress | 5 | @adriano08-xc | Sprint 5 |
+| #8 | Dockerización del Sistema y Despliegue en la Nube | Tarea | Alta | Backlog | 8 | @GJG16 | Sprint 8 |
+| #19 | Notificaciones en Tiempo Real (WebSocket) | Historia de usuario | Alta | To Do | 6 | @GJG16 | Sprint 6 |
+| #20 | Sistema de Categorías y SLA para Tickets | Historia de usuario | Alta | To Do | 6 | @adriano08-xc | Sprint 6 |
+| #21 | Panel de Administración de Usuarios | Historia de usuario | Media | Backlog | 7 | @adriano08-xc | Sprint 7 |
+| #22 | Pruebas E2E y Limpieza de Codigo de Debug | Tarea | Media | Backlog | 7 | @franco27-dev | Sprint 7 |
+| #23 | Documentación Técnica y Entrega Final | Tarea | Alta | In Progress | 8 | @GJG16 | Sprint 8 |
+## 📞 Contacto y Contribución
+
+- **Repositorio**: https://github.com/GJG16/Helpdesk-nexacorp
+- **Issues**: Reportar problemas en la sección de Issues de GitHub
+
+---
+
+## 📄 Licencia
+
 Desarrollado para uso corporativo interno / Proyecto de Portfolio.
+
+Este proyecto está bajo la licencia MIT. Consulta el archivo `LICENSE` para más detalles.
+
+---
+
+**Última actualización**: 01 de Junio de 2026
+**Versión**: 1.0.0-alpha

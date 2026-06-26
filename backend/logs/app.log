@@ -48,3 +48,6 @@
 2026-06-22 18:14:17.450 | INFO     | backend.main:lifespan:29 - Aplicación iniciada correctamente
 2026-06-22 18:14:17.449 | INFO     | backend.database:connect_db:24 - [OK] Conectado a MongoDB: mongodb://localhost:27017/helpdesk_db
 2026-06-22 18:14:17.450 | INFO     | backend.main:lifespan:29 - Aplicación iniciada correctamente
+2026-06-24 15:07:59.422 | INFO     | backend.main:lifespan:27 - Iniciando conexión a base de datos...
+2026-06-24 15:07:59.588 | INFO     | backend.database:connect_db:24 - [OK] Conectado a MongoDB: mongodb://localhost:27017/helpdesk_db
+2026-06-24 15:07:59.588 | INFO     | backend.main:lifespan:29 - Aplicación iniciada correctamente
