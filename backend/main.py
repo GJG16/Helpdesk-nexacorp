@@ -89,7 +89,7 @@ async def root(request: Request):
 
 from fastapi import WebSocket, WebSocketDisconnect
 from backend.security import decode_token
-from backend.websockets import manager
+from backend.ws_handler import manager
 
 @app.websocket("/api/ws")
 async def websocket_endpoint(websocket: WebSocket, token: str):

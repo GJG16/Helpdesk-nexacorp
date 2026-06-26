@@ -175,7 +175,7 @@ async def create_ticket(ticket_data: TicketCreate, db=Depends(get_database), cur
     serialized_ticket = _serialize_ticket(created_ticket)
     
     # WebSocket notification for agents and admins
-    from backend.websockets import manager
+    from backend.ws_handler import manager
     await manager.broadcast({
         "type": "TICKET_CREATED",
         "ticket_id": serialized_ticket["id"],
@@ -232,7 +232,7 @@ async def create_ticket_comment(ticket_id: str, comment_data: TicketCommentCreat
         created_comment["id"] = str(created_comment.pop("_id"))
         
         # WebSocket notification
-        from backend.websockets import manager
+        from backend.ws_handler import manager
         
         # Notify the ticket owner if the commenter is an agent/admin
         if ticket.get("usuario_id") != current_user.get("id"):
@@ -360,7 +360,7 @@ async def update_ticket(ticket_id: str, ticket_update: TicketUpdate, db=Depends(
         updated_ticket = await db.tickets.find_one({"_id": ObjectId(ticket_id)})
         
         # WebSocket notification
-        from backend.websockets import manager
+        from backend.ws_handler import manager
         if updated_ticket.get("usuario_id") != current_user.get("id"):
             await manager.send_personal_message({
                 "type": "TICKET_UPDATED",
