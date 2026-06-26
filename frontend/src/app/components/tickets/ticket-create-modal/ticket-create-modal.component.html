@@ -1,73 +1,107 @@
-<div class="modal-backdrop" (click)="onClose()">
-  <div class="modal-container" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <div class="modal-title-group">
-        <div class="icon-box">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="12" y1="18" x2="12" y2="12"></line><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+<!-- Backdrop -->
+<div class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-0">
+  <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" (click)="onClose()"></div>
+
+  <!-- Modal Panel -->
+  <div class="relative bg-white dark:bg-slate-900 rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden flex flex-col max-h-[90vh] animate-slide-up" (click)="$event.stopPropagation()">
+    
+    <!-- Header -->
+    <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
+      <div class="flex items-center space-x-3">
+        <div class="bg-blue-100 dark:bg-blue-900/50 p-2 rounded-lg text-blue-600 dark:text-blue-400">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+          </svg>
         </div>
-        <h2>Crear Nuevo Ticket</h2>
+        <h2 class="text-lg font-bold text-slate-900 dark:text-white">Crear Nuevo Ticket</h2>
       </div>
-      <button class="close-btn" (click)="onClose()" *ngIf="!showSuccessAnimation">
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      <button *ngIf="!showSuccessAnimation" (click)="onClose()" class="text-slate-400 hover:text-slate-500 dark:hover:text-slate-300 transition-colors rounded-md p-1 hover:bg-slate-100 dark:hover:bg-slate-800">
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
       </button>
     </div>
 
     <!-- Success View -->
-    <div class="success-view" *ngIf="showSuccessAnimation">
-      <div class="success-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+    <div *ngIf="showSuccessAnimation" class="flex-1 p-12 flex flex-col items-center justify-center text-center">
+      <div class="w-16 h-16 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 rounded-full flex items-center justify-center mb-4 animate-bounce">
+        <svg class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
       </div>
-      <h3>¡Ticket Creado!</h3>
-      <p>Tu solicitud ha sido registrada correctamente.</p>
+      <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-2">¡Ticket Registrado!</h3>
+      <p class="text-slate-500 dark:text-slate-400">El equipo de soporte ha sido notificado.</p>
     </div>
 
     <!-- Form View -->
-    <div class="modal-body" *ngIf="!showSuccessAnimation">
-      <p class="subtitle">Describe tu problema o solicitud con detalle para que el equipo pueda ayudarte.</p>
+    <div *ngIf="!showSuccessAnimation" class="flex-1 overflow-y-auto p-6">
+      <p class="text-sm text-slate-500 dark:text-slate-400 mb-6">Describe tu problema o requerimiento con el mayor detalle posible para acelerar la resolución.</p>
       
-      <div class="error-message" *ngIf="error">
+      <div *ngIf="error" class="mb-6 p-4 bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 rounded-md text-sm border border-red-200 dark:border-red-900/50">
         {{ error }}
       </div>
 
-      <form [formGroup]="ticketForm" (ngSubmit)="onSubmit()">
-        <div class="form-group">
-          <label for="titulo">Asunto / Título <span class="required">*</span></label>
-          <input type="text" id="titulo" formControlName="titulo" class="form-control" placeholder="Ej: Error al procesar pago en la pasarela">
-          <div *ngIf="ticketForm.get('titulo')?.invalid && ticketForm.get('titulo')?.touched" class="error-text">
-            El título es requerido (mínimo 5 caracteres).
-          </div>
+      <form [formGroup]="ticketForm" (ngSubmit)="onSubmit()" class="space-y-6">
+        
+        <!-- Título -->
+        <div>
+          <label for="titulo" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+            Asunto / Título <span class="text-red-500">*</span>
+          </label>
+          <input type="text" id="titulo" formControlName="titulo" 
+            class="block w-full rounded-md border-slate-300 dark:border-slate-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-2 px-3 border transition-colors"
+            [ngClass]="{'border-red-300 focus:border-red-500 focus:ring-red-500': ticketForm.get('titulo')?.invalid && ticketForm.get('titulo')?.touched}"
+            placeholder="Ej: Error al procesar pago en la pasarela">
+          <p *ngIf="ticketForm.get('titulo')?.invalid && ticketForm.get('titulo')?.touched" class="mt-1.5 text-xs text-red-600 dark:text-red-400">
+            El título es requerido y debe tener al menos 5 caracteres.
+          </p>
         </div>
 
-        <div class="form-group">
-          <label for="tipo">Tipo de Ticket <span class="required">*</span></label>
-          <select id="tipo" formControlName="tipo" class="form-control">
-            <option value="incidente">Incidente (Algo no funciona)</option>
-            <option value="requerimiento">Requerimiento (Necesito algo nuevo)</option>
+        <!-- Tipo -->
+        <div>
+          <label for="tipo" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+            Tipo de Ticket <span class="text-red-500">*</span>
+          </label>
+          <select id="tipo" formControlName="tipo" 
+            class="block w-full rounded-md border-slate-300 dark:border-slate-700 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm bg-white dark:bg-slate-900 text-slate-900 dark:text-white py-2 px-3 border transition-colors">
+            <option value="incidente">Incidente (Fallo o error en sistema)</option>
+            <option value="requerimiento">Requerimiento (Solicitud de nuevo acceso, equipo, etc)</option>
           </select>
         </div>
 
-        <div class="form-group">
-          <label for="descripcion">Descripción detallada <span class="required">*</span></label>
-          <quill-editor formControlName="descripcion" [modules]="{ toolbar: [['bold', 'italic', 'underline'], [{'list': 'ordered'}, {'list': 'bullet'}], ['clean']] }" placeholder="Por favor, incluye los pasos para reproducir el problema o la información necesaria..."></quill-editor>
-          <div *ngIf="ticketForm.get('descripcion')?.invalid && ticketForm.get('descripcion')?.touched" class="error-text">
-            La descripción es requerida (mínimo 10 caracteres).
+        <!-- Descripción -->
+        <div>
+          <label for="descripcion" class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">
+            Descripción detallada <span class="text-red-500">*</span>
+          </label>
+          <div class="rounded-md border border-slate-300 dark:border-slate-700 shadow-sm overflow-hidden bg-white dark:bg-slate-900 focus-within:ring-1 focus-within:ring-blue-500 focus-within:border-blue-500 transition-colors" [ngClass]="{'border-red-300 focus-within:border-red-500 focus-within:ring-red-500': ticketForm.get('descripcion')?.invalid && ticketForm.get('descripcion')?.touched}">
+            <quill-editor formControlName="descripcion" 
+              [modules]="{ toolbar: [['bold', 'italic', 'underline'], [{'list': 'ordered'}, {'list': 'bullet'}], ['clean']] }" 
+              placeholder="Incluye pasos para reproducir, enlaces o detalles específicos..."
+              class="border-none">
+            </quill-editor>
           </div>
+          <p *ngIf="ticketForm.get('descripcion')?.invalid && ticketForm.get('descripcion')?.touched" class="mt-1.5 text-xs text-red-600 dark:text-red-400">
+            La descripción es obligatoria (mín. 10 caracteres).
+          </p>
         </div>
 
-        <!-- La prioridad ya NO se muestra aquí, se asigna 'Media' por defecto internamente -->
-        <div class="info-alert">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
-          <span>La prioridad será evaluada por el equipo de soporte.</span>
+        <!-- Info box -->
+        <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/50 rounded-md p-3 flex items-start">
+          <svg class="h-5 w-5 text-blue-500 dark:text-blue-400 mt-0.5 mr-2 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <p class="text-xs text-blue-700 dark:text-blue-300">
+            La prioridad inicial será evaluada y asignada por el equipo de soporte. Puedes adjuntar imágenes después de crear el ticket editándolo desde el tablero.
+          </p>
         </div>
 
-        <div class="modal-actions">
-          <button type="button" class="btn btn-secondary" (click)="onClose()">Cancelar</button>
-          <button type="submit" class="btn btn-primary" [disabled]="ticketForm.invalid || loading">
-            <span *ngIf="loading" class="spinner"></span>
-            <span *ngIf="!loading">Enviar Ticket</span>
-          </button>
-        </div>
       </form>
     </div>
+
+    <!-- Footer Actions -->
+    <div *ngIf="!showSuccessAnimation" class="px-6 py-4 bg-slate-50 dark:bg-slate-900/80 border-t border-slate-200 dark:border-slate-800 flex justify-end space-x-3 rounded-b-xl">
+      <app-button variant="secondary" (click)="onClose()">Cancelar</app-button>
+      <app-button variant="primary" (click)="onSubmit()" [isLoading]="loading" [disabled]="ticketForm.invalid">Crear Ticket</app-button>
+    </div>
+
   </div>
 </div>

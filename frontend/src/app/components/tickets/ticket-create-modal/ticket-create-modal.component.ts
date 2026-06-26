@@ -5,11 +5,12 @@ import { TicketService } from '../../../services/ticket.service';
 import { Ticket } from '../../../models';
 
 import { QuillModule } from 'ngx-quill';
+import { ButtonComponent } from '../../ui/button/button';
 
 @Component({
   selector: 'app-ticket-create-modal',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, QuillModule],
+  imports: [CommonModule, ReactiveFormsModule, QuillModule, ButtonComponent],
   templateUrl: './ticket-create-modal.component.html',
   styleUrls: ['./ticket-create-modal.component.css']
 })
