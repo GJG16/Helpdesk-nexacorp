@@ -37,7 +37,7 @@ permissions:
 # Variables de configuración del proyecto — Ajusta estos valores a tu proyecto
 env:
   # Número del proyecto en GitHub Projects V2 (visible en la URL del proyecto)
-  PROJECT_NUMBER: "1"
+  PROJECT_NUMBER: "4"
   # Owner del proyecto: puede ser un usuario u organización
   PROJECT_OWNER: "${{ github.repository_owner }}"
 
