@@ -27,7 +27,7 @@ jobs:
         cache-dependency-path: './frontend/package-lock.json'
 
     - name: Instalar dependencias
-      run: npm install
+      run: npm install --legacy-peer-deps
 
     - name: Compilar aplicación de Angular para Producción
       # Asegúrate de configurar la base-href si tu repositorio no es la raíz del dominio
@@ -38,6 +38,6 @@ jobs:
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        # Cambia 'frontend' por el nombre de tu proyecto Angular que se genera dentro de dist/
-        publish_dir: ./frontend/dist/frontend
+        # En las versiones nuevas de Angular, la salida se guarda dentro de una subcarpeta "browser"
+        publish_dir: ./frontend/dist/frontend/browser
         commit_message: "🚀 Despliegue automático a GitHub Pages"
