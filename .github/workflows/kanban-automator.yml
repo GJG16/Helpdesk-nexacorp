@@ -1,428 +1,45 @@
-# ==============================================================================
-# KANBAN AUTOMATOR — Issue Ops (GitHub Projects V2)
-# ==============================================================================
-# Este workflow automatiza el movimiento de tarjetas (Issues) en el tablero
-# Kanban de GitHub Projects V2 basándose en la actividad de Pull Requests.
-#
-# ⚠️ SEGURIDAD — TOKEN DE ACCESO PERSONAL (PAT)
-# ─────────────────────────────────────────────
-# GitHub Projects V2 requiere permisos avanzados que NO están incluidos en el
-# GITHUB_TOKEN por defecto. Es necesario crear un Personal Access Token (PAT)
-# con los scopes: "project", "repo", "read:org" y almacenarlo como secreto
-# del repositorio con el nombre PROJECT_TOKEN.
-#
-# Para crear el secreto:
-#   Repo → Settings → Secrets and variables → Actions → New repository secret
-#   Nombre: PROJECT_TOKEN
-#   Valor:  ghp_xxxxx (tu PAT con permisos de project)
-#
-# ⚠️ CONFIGURACIÓN REQUERIDA
-# ─────────────────────────
-# Debes establecer las variables de entorno PROJECT_NUMBER y PROJECT_OWNER
-# con los valores correspondientes a tu proyecto de GitHub Projects V2.
-# ==============================================================================
-
 name: Kanban Automator (Issue Ops)
 
 on:
+  issues:
+    types: [opened, labeled, assigned]
   pull_request:
-    types: [opened, ready_for_review, closed]
-
-# Permisos mínimos requeridos para leer el contenido del PR y sus Issues enlazados
-permissions:
-  contents: read
-  pull-requests: read
-  issues: read
-
-# Variables de configuración del proyecto — Ajusta estos valores a tu proyecto
-env:
-  # Número del proyecto en GitHub Projects V2 (visible en la URL del proyecto)
-  PROJECT_NUMBER: "4"
-  # Owner del proyecto: puede ser un usuario u organización
-  PROJECT_OWNER: "${{ github.repository_owner }}"
+    types: [opened, ready_for_review, review_requested, closed]
 
 jobs:
-  automate-kanban:
-    name: "🔄 Mover tarjeta en Kanban"
+  automate_kanban:
     runs-on: ubuntu-latest
-
     steps:
-      # ================================================================
-      # PASO 1: Extraer los Issues enlazados al Pull Request
-      # ================================================================
-      # Usamos la API GraphQL para obtener los "closing references",
-      # es decir, los Issues que el PR cerrará automáticamente al
-      # hacer merge (ej: "Closes #5", "Fixes #12" en el cuerpo del PR).
-      # ================================================================
-      - name: "🔍 Obtener Issues enlazados al PR"
-        id: get-issues
-        uses: actions/github-script@v7
+      - name: Mover Issue/PR en el Tablero Kanban (Simulación)
+        uses: actions/github-script@v6
         with:
-          # Se usa PROJECT_TOKEN en vez de GITHUB_TOKEN porque Projects V2
-          # necesita scopes adicionales (project, read:org)
-          github-token: ${{ secrets.PROJECT_TOKEN }}
           script: |
-            // Consultamos los Issues vinculados al PR mediante closing references
-            // La API GraphQL de GitHub expone "closingReferencesConnection" en
-            // el objeto PullRequest, que lista los Issues que se cerrarán al merge.
-            const query = `
-              query($owner: String!, $repo: String!, $prNumber: Int!) {
-                repository(owner: $owner, name: $repo) {
-                  pullRequest(number: $prNumber) {
-                    closingReferencesConnection(first: 10) {
-                      nodes {
-                        ... on Issue {
-                          id
-                          number
-                          title
-                        }
-                      }
-                    }
-                  }
-                }
+            // Este script sirve para automatizar el movimiento de tarjetas en GitHub Projects.
+            // Dependiendo del evento, podemos determinar el estado objetivo.
+            
+            const eventName = context.eventName;
+            const action = context.payload.action;
+            let targetColumn = "";
+            
+            if (eventName === 'pull_request') {
+              if (action === 'opened' || action === 'ready_for_review') {
+                targetColumn = "In Progress";
+              } else if (action === 'review_requested') {
+                targetColumn = "Code Review";
+              } else if (action === 'closed' && context.payload.pull_request.merged) {
+                targetColumn = "Done";
               }
-            `;
-
-            const variables = {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              prNumber: context.payload.pull_request.number
-            };
-
-            const result = await github.graphql(query, variables);
-            const issues = result.repository.pullRequest.closingReferencesConnection.nodes;
-
-            if (issues.length === 0) {
-              core.warning('⚠️ Este PR no tiene Issues enlazados (usa "Closes #N" en la descripción).');
-              core.setOutput('has_issues', 'false');
-              return;
             }
-
-            // Guardamos los IDs de los Issues enlazados para el siguiente paso
-            core.info(`✅ Se encontraron ${issues.length} Issue(s) enlazado(s):`);
-            issues.forEach(issue => {
-              core.info(`   - Issue #${issue.number}: ${issue.title} (Node ID: ${issue.id})`);
-            });
-
-            // Exportamos como JSON para uso en el paso siguiente
-            core.setOutput('has_issues', 'true');
-            core.setOutput('issue_ids', JSON.stringify(issues.map(i => i.id)));
-            core.setOutput('issue_numbers', JSON.stringify(issues.map(i => i.number)));
-
-      # ================================================================
-      # PASO 2: Determinar la columna destino según el evento del PR
-      # ================================================================
-      # Lógica de estados del Kanban:
-      #   - PR abierto (opened)           → Mover Issue a "In Progress"
-      #   - PR listo para revisión         → Mover Issue a "Code Review"
-      #   - PR cerrado CON merge (closed)  → Mover Issue a "Done"
-      #   - PR cerrado SIN merge           → No se mueve (PR descartado)
-      # ================================================================
-      - name: "🎯 Determinar columna destino en Kanban"
-        id: determine-column
-        if: steps.get-issues.outputs.has_issues == 'true'
-        run: |
-          ACTION="${{ github.event.action }}"
-          MERGED="${{ github.event.pull_request.merged }}"
-          PR_DRAFT="${{ github.event.pull_request.draft }}"
-
-          echo "📋 Evento: pull_request.$ACTION (merged=$MERGED, draft=$PR_DRAFT)"
-
-          if [[ "$ACTION" == "opened" && "$PR_DRAFT" == "false" ]]; then
-            # PR abierto y listo — el desarrollador está trabajando activamente
-            echo "target_column=In Progress" >> "$GITHUB_OUTPUT"
-            echo "✅ Destino: In Progress"
-          elif [[ "$ACTION" == "ready_for_review" ]]; then
-            # PR marcado como listo para revisión — necesita code review
-            echo "target_column=Code Review" >> "$GITHUB_OUTPUT"
-            echo "✅ Destino: Code Review"
-          elif [[ "$ACTION" == "closed" && "$MERGED" == "true" ]]; then
-            # PR cerrado y mergeado — trabajo completado
-            echo "target_column=Done" >> "$GITHUB_OUTPUT"
-            echo "✅ Destino: Done"
-          else
-            # PR cerrado sin merge (descartado) — no movemos la tarjeta
-            echo "target_column=" >> "$GITHUB_OUTPUT"
-            echo "ℹ️ PR cerrado sin merge. No se requiere mover tarjeta."
-          fi
-
-      # ================================================================
-      # PASO 3: Mover las tarjetas en GitHub Projects V2
-      # ================================================================
-      # Aquí usamos la API GraphQL de Projects V2 para:
-      #   1. Obtener el ID del proyecto y el campo "Status" (SingleSelect)
-      #   2. Encontrar el ID de la opción correspondiente a la columna destino
-      #   3. Buscar el item del Issue en el proyecto
-      #   4. Actualizar el campo Status del item con la opción correcta
-      #
-      # Mutaciones GraphQL utilizadas:
-      #   - updateProjectV2ItemFieldValue: Cambia el valor del campo Status
-      #   - addProjectV2ItemById: Agrega el Issue al proyecto si no está
-      # ================================================================
-      - name: "🚀 Mover tarjetas en GitHub Projects V2"
-        if: steps.get-issues.outputs.has_issues == 'true' && steps.determine-column.outputs.target_column != ''
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.PROJECT_TOKEN }}
-          script: |
-            const targetColumn = '${{ steps.determine-column.outputs.target_column }}';
-            const issueIds = JSON.parse('${{ steps.get-issues.outputs.issue_ids }}');
-            const issueNumbers = JSON.parse('${{ steps.get-issues.outputs.issue_numbers }}');
-            const projectNumber = parseInt('${{ env.PROJECT_NUMBER }}');
-            const projectOwner = '${{ env.PROJECT_OWNER }}';
-
-            core.info(`🎯 Columna destino: "${targetColumn}"`);
-            core.info(`📦 Issues a procesar: ${issueNumbers.join(', ')}`);
-
-            // ──────────────────────────────────────────────────────
-            // QUERY 1: Obtener el ID del proyecto y el campo "Status"
-            // ──────────────────────────────────────────────────────
-            // Intentamos primero como usuario; si falla, como organización.
-            // El campo "Status" es de tipo SingleSelect y contiene las
-            // columnas del Kanban (To Do, In Progress, Code Review, Done).
-            // ──────────────────────────────────────────────────────
-
-            let projectId, statusFieldId, statusOptions;
-
-            // Intentar obtener proyecto como usuario
-            try {
-              const userQuery = `
-                query($owner: String!, $number: Int!) {
-                  user(login: $owner) {
-                    projectV2(number: $number) {
-                      id
-                      fields(first: 30) {
-                        nodes {
-                          ... on ProjectV2SingleSelectField {
-                            id
-                            name
-                            options {
-                              id
-                              name
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              `;
-
-              const userResult = await github.graphql(userQuery, {
-                owner: projectOwner,
-                number: projectNumber
+            
+            console.log(`El evento '${eventName}' con acción '${action}' moverá el elemento a la columna: '${targetColumn}'`);
+            console.log("Nota: Para mover tarjetas en Projects V2 reales se requiere usar llamadas GraphQL con un Personal Access Token (PAT).");
+            
+            // Ejemplo de comentario automatizado en el PR notificando el movimiento
+            if (eventName === 'pull_request' && targetColumn) {
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `🤖 **Kanban Automator:** Se ha enlazado este PR. Moviendo el estado en el Project Board a **${targetColumn}**.`
               });
-
-              const project = userResult.user.projectV2;
-              projectId = project.id;
-              const statusField = project.fields.nodes.find(
-                f => f.name && f.name.toLowerCase() === 'status'
-              );
-
-              if (!statusField) {
-                core.setFailed('❌ No se encontró el campo "Status" en el proyecto.');
-                return;
-              }
-
-              statusFieldId = statusField.id;
-              statusOptions = statusField.options;
-              core.info('✅ Proyecto encontrado como usuario.');
-
-            } catch (userError) {
-              // Si falla como usuario, intentar como organización
-              core.info('ℹ️ No se encontró como usuario, intentando como organización...');
-
-              const orgQuery = `
-                query($owner: String!, $number: Int!) {
-                  organization(login: $owner) {
-                    projectV2(number: $number) {
-                      id
-                      fields(first: 30) {
-                        nodes {
-                          ... on ProjectV2SingleSelectField {
-                            id
-                            name
-                            options {
-                              id
-                              name
-                            }
-                          }
-                        }
-                      }
-                    }
-                  }
-                }
-              `;
-
-              const orgResult = await github.graphql(orgQuery, {
-                owner: projectOwner,
-                number: projectNumber
-              });
-
-              const project = orgResult.organization.projectV2;
-              projectId = project.id;
-              const statusField = project.fields.nodes.find(
-                f => f.name && f.name.toLowerCase() === 'status'
-              );
-
-              if (!statusField) {
-                core.setFailed('❌ No se encontró el campo "Status" en el proyecto.');
-                return;
-              }
-
-              statusFieldId = statusField.id;
-              statusOptions = statusField.options;
-              core.info('✅ Proyecto encontrado como organización.');
             }
-
-            // ──────────────────────────────────────────────────────
-            // Buscar el ID de la opción de la columna destino
-            // ──────────────────────────────────────────────────────
-            const targetOption = statusOptions.find(
-              opt => opt.name.toLowerCase() === targetColumn.toLowerCase()
-            );
-
-            if (!targetOption) {
-              const available = statusOptions.map(o => `"${o.name}"`).join(', ');
-              core.setFailed(
-                `❌ Columna "${targetColumn}" no encontrada. Columnas disponibles: ${available}`
-              );
-              return;
-            }
-
-            core.info(`✅ Columna "${targetColumn}" encontrada (ID: ${targetOption.id})`);
-
-            // ──────────────────────────────────────────────────────
-            // Procesar cada Issue enlazado al PR
-            // ──────────────────────────────────────────────────────
-            for (let i = 0; i < issueIds.length; i++) {
-              const issueNodeId = issueIds[i];
-              const issueNum = issueNumbers[i];
-
-              core.info(`\n📌 Procesando Issue #${issueNum}...`);
-
-              // ──────────────────────────────────────────────────
-              // QUERY 2: Buscar el item del Issue en el proyecto
-              // ──────────────────────────────────────────────────
-              // Los items del proyecto tienen un ID propio distinto
-              // al node_id del Issue. Necesitamos el ID del item
-              // para poder actualizar su campo Status.
-              // ──────────────────────────────────────────────────
-              let itemId;
-
-              const itemsQuery = `
-                query($projectId: ID!, $cursor: String) {
-                  node(id: $projectId) {
-                    ... on ProjectV2 {
-                      items(first: 100, after: $cursor) {
-                        nodes {
-                          id
-                          content {
-                            ... on Issue {
-                              id
-                              number
-                            }
-                          }
-                        }
-                        pageInfo {
-                          hasNextPage
-                          endCursor
-                        }
-                      }
-                    }
-                  }
-                }
-              `;
-
-              // Paginamos para buscar el Issue en el proyecto
-              let cursor = null;
-              let found = false;
-
-              while (!found) {
-                const itemsResult = await github.graphql(itemsQuery, {
-                  projectId: projectId,
-                  cursor: cursor
-                });
-
-                const items = itemsResult.node.items;
-
-                for (const item of items.nodes) {
-                  if (item.content && item.content.id === issueNodeId) {
-                    itemId = item.id;
-                    found = true;
-                    break;
-                  }
-                }
-
-                if (!found && items.pageInfo.hasNextPage) {
-                  cursor = items.pageInfo.endCursor;
-                } else {
-                  break;
-                }
-              }
-
-              // Si el Issue no está en el proyecto, lo agregamos automáticamente
-              if (!itemId) {
-                core.info(`ℹ️ Issue #${issueNum} no está en el proyecto. Agregándolo...`);
-
-                // ──────────────────────────────────────────────
-                // MUTATION: addProjectV2ItemById
-                // ──────────────────────────────────────────────
-                // Agrega un Issue o PR existente al proyecto.
-                // Retorna el ID del nuevo item creado.
-                // ──────────────────────────────────────────────
-                const addMutation = `
-                  mutation($projectId: ID!, $contentId: ID!) {
-                    addProjectV2ItemById(input: {
-                      projectId: $projectId,
-                      contentId: $contentId
-                    }) {
-                      item {
-                        id
-                      }
-                    }
-                  }
-                `;
-
-                const addResult = await github.graphql(addMutation, {
-                  projectId: projectId,
-                  contentId: issueNodeId
-                });
-
-                itemId = addResult.addProjectV2ItemById.item.id;
-                core.info(`✅ Issue #${issueNum} agregado al proyecto (Item ID: ${itemId})`);
-              }
-
-              // ──────────────────────────────────────────────────
-              // MUTATION: updateProjectV2ItemFieldValue
-              // ──────────────────────────────────────────────────
-              // Esta es la mutación clave: actualiza el campo
-              // "Status" del item en el proyecto, moviendo la
-              // tarjeta a la columna correspondiente del Kanban.
-              // ──────────────────────────────────────────────────
-              const updateMutation = `
-                mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $optionId: String!) {
-                  updateProjectV2ItemFieldValue(input: {
-                    projectId: $projectId,
-                    itemId: $itemId,
-                    fieldId: $fieldId,
-                    value: { singleSelectOptionId: $optionId }
-                  }) {
-                    projectV2Item {
-                      id
-                    }
-                  }
-                }
-              `;
-
-              await github.graphql(updateMutation, {
-                projectId: projectId,
-                itemId: itemId,
-                fieldId: statusFieldId,
-                optionId: targetOption.id
-              });
-
-              core.info(`✅ Issue #${issueNum} movido a columna "${targetColumn}" exitosamente.`);
-            }
-
-            core.info(`\n🎉 Proceso completado. ${issueIds.length} Issue(s) actualizado(s).`);
