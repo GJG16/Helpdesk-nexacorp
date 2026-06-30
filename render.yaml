@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: helpdesk-backend
+    env: python
+    # Usamos la carpeta 'backend' por lo que necesitamos instalar desde ahí
+    buildCommand: "pip install -r backend/requirements.txt"
+    # Iniciamos uvicorn apuntando a backend/main.py. $PORT es inyectado por Render
+    startCommand: "uvicorn backend.main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: APP_NAME
+        value: "Helpdesk API"
+      - key: APP_VERSION
+        value: "1.0.0"
+      - key: CORS_ORIGINS
+        value: "*" # En producción deberías cambiar esto a la URL de tu frontend en GitHub Pages
+      - key: MONGO_URI
+        sync: false # Debes configurar esto manualmente en el dashboard de Render
+      - key: JWT_SECRET_KEY
+        sync: false # Debes configurar esto manualmente en el dashboard de Render
+      - key: JWT_ALGORITHM
+        value: "HS256"
+      - key: ACCESS_TOKEN_EXPIRE_MINUTES
+        value: "60"
