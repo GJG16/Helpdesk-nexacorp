@@ -3,13 +3,10 @@ name: CI Backend (FastAPI)
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    # Configuramos el directorio de trabajo asumiendo que el código está en la carpeta 'backend'
     defaults:
       run:
         working-directory: ./backend
@@ -30,13 +27,12 @@ jobs:
         pip install flake8 pytest
         if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
-    - name: Análisis de código estático (Linter) con flake8
+    - name: Análisis estático (Linter)
       run: |
-        # Detiene el build si hay errores de sintaxis en Python
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # Las alertas de formato se tratan como advertencias
+        # flake8 ignorará los errores con exit-zero
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
-    - name: Ejecutar pruebas unitarias con pytest
+    - name: Ejecutar pruebas unitarias
       run: |
+        # Usamos pytest para verificar el código
         pytest

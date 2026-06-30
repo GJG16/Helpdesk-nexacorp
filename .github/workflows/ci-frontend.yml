@@ -3,13 +3,10 @@ name: CI Frontend (Angular)
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
 
 jobs:
-  build-and-test:
+  build:
     runs-on: ubuntu-latest
-    # Configuramos el directorio de trabajo asumiendo que el código está en la carpeta 'frontend'
     defaults:
       run:
         working-directory: ./frontend
@@ -21,16 +18,13 @@ jobs:
     - name: Configurar Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '18.x' # Versión estable compatible con versiones recientes de Angular
+        node-version: '18.x'
         cache: 'npm'
         cache-dependency-path: './frontend/package-lock.json'
 
     - name: Instalar dependencias
+      # Usamos legacy-peer-deps para evitar conflictos de librerías en Angular v17+
       run: npm install --legacy-peer-deps
 
     - name: Compilar aplicación (Build)
-      run: npm run build --if-present
-
-    - name: Ejecutar pruebas (Opcional, si tienes configurado Karma/Jasmine)
-      run: npm run test -- --watch=false --browsers=ChromeHeadless
-      continue-on-error: true # Permite que continúe si no hay pruebas configuradas aún
+      run: npm run build

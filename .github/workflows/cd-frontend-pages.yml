@@ -2,14 +2,13 @@ name: CD Frontend (GitHub Pages)
 
 on:
   push:
-    branches: [ "main" ] # Se activa tras hacer push o mergear a main
+    branches: [ "main" ]
 
-# Permisos necesarios para que GitHub Actions pueda publicar en la rama gh-pages
 permissions:
   contents: write
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -23,21 +22,17 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: '18.x'
-        cache: 'npm'
-        cache-dependency-path: './frontend/package-lock.json'
 
     - name: Instalar dependencias
       run: npm install --legacy-peer-deps
 
-    - name: Compilar aplicación de Angular para Producción
-      # Asegúrate de configurar la base-href si tu repositorio no es la raíz del dominio
-      # Ejemplo: --base-href /nombre-del-repo/
+    - name: Compilar aplicación de Angular
+      # Configuramos la base-href para GitHub Pages (opcionalmente puedes añadir --base-href /repo/)
       run: npm run build -- --configuration production
 
     - name: Desplegar en GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        # En las versiones nuevas de Angular, la salida se guarda dentro de una subcarpeta "browser"
+        # Las versiones recientes de Angular guardan el build en una subcarpeta "browser"
         publish_dir: ./frontend/dist/frontend/browser
-        commit_message: "🚀 Despliegue automático a GitHub Pages"

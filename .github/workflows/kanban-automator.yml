@@ -2,44 +2,26 @@ name: Kanban Automator (Issue Ops)
 
 on:
   issues:
-    types: [opened, labeled, assigned]
+    types: [opened]
   pull_request:
-    types: [opened, ready_for_review, review_requested, closed]
+    types: [opened]
 
 jobs:
   automate_kanban:
     runs-on: ubuntu-latest
     steps:
-      - name: Mover Issue/PR en el Tablero Kanban (Simulación)
+      - name: Mover PR en Tablero Kanban
         uses: actions/github-script@v6
         with:
           script: |
-            // Este script sirve para automatizar el movimiento de tarjetas en GitHub Projects.
-            // Dependiendo del evento, podemos determinar el estado objetivo.
+            console.log("Detectado un nuevo Issue o Pull Request.");
+            console.log("En un entorno real, aquí conectamos con GraphQL para mover el elemento a 'In Progress' o 'Code Review'.");
             
-            const eventName = context.eventName;
-            const action = context.payload.action;
-            let targetColumn = "";
-            
-            if (eventName === 'pull_request') {
-              if (action === 'opened' || action === 'ready_for_review') {
-                targetColumn = "In Progress";
-              } else if (action === 'review_requested') {
-                targetColumn = "Code Review";
-              } else if (action === 'closed' && context.payload.pull_request.merged) {
-                targetColumn = "Done";
-              }
-            }
-            
-            console.log(`El evento '${eventName}' con acción '${action}' moverá el elemento a la columna: '${targetColumn}'`);
-            console.log("Nota: Para mover tarjetas en Projects V2 reales se requiere usar llamadas GraphQL con un Personal Access Token (PAT).");
-            
-            // Ejemplo de comentario automatizado en el PR notificando el movimiento
-            if (eventName === 'pull_request' && targetColumn) {
+            if (context.eventName === 'pull_request') {
               github.rest.issues.createComment({
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                body: `🤖 **Kanban Automator:** Se ha enlazado este PR. Moviendo el estado en el Project Board a **${targetColumn}**.`
+                body: `🤖 **Kanban Automator:** Se ha enlazado este PR. Moviendo a la columna **In Progress** o **Code Review**.`
               });
             }
