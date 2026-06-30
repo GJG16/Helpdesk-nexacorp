@@ -1,4 +1,4 @@
-name: Pipeline CI: Backend FastAPI
+name: "Pipeline CI: Backend FastAPI"
 
 on:
   push:

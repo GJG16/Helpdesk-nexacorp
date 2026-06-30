@@ -1,4 +1,4 @@
-name: Pipeline CD: Despliegue Frontend (GitHub Pages)
+name: "Pipeline CD: Despliegue Frontend (GitHub Pages)"
 
 on:
   push:
