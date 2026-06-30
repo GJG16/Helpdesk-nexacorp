@@ -1,6 +1,8 @@
 name: "Automatización: Tablero Kanban (Issue Ops)"
 
 on:
+  push:
+    branches: [ "main" ]
   issues:
     types: [opened]
   pull_request:
