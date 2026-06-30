@@ -1,4 +1,4 @@
-name: Kanban Automator (Issue Ops)
+name: Automatización: Tablero Kanban (Issue Ops)
 
 on:
   issues:
