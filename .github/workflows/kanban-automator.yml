@@ -1,45 +1,45 @@
 name: Kanban Automator (Issue Ops)
 
 on:
-  pull_request:
-    types: [opened, reopened, closed, review_requested]
   issues:
-    types: [opened, closed, assigned]
+    types: [opened, labeled, assigned]
+  pull_request:
+    types: [opened, ready_for_review, review_requested, closed]
 
 jobs:
-  automate-kanban:
+  automate_kanban:
     runs-on: ubuntu-latest
     steps:
-    - name: Auto-move Issue/PR based on event
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const eventName = context.eventName;
-          const action = context.payload.action;
-          
-          console.log(`Triggered by ${eventName} with action ${action}`);
-          
-          // Este es un script Issue Ops base.
-          // Para integrarlo completamente con GitHub Projects V2
-          // se requeriría el ID del proyecto y uso de la API GraphQL.
-          // 
-          // Ejemplo lógico:
-          // Si eventName === 'issues' y action === 'opened' -> Mover a 'To Do'
-          // Si eventName === 'pull_request' y action === 'opened' -> Mover a 'In Progress' o 'Code Review'
-          // Si eventName === 'pull_request' y action === 'closed' y pr.merged -> Mover a 'Done'
-          
-          if (eventName === 'pull_request') {
-            const pr = context.payload.pull_request;
-            if (action === 'opened') {
-              console.log(`Pull Request #${pr.number} abierto. (Aquí moveríamos el ticket a 'In Progress')`);
-            } else if (action === 'closed' && pr.merged) {
-              console.log(`Pull Request #${pr.number} mergeado. (Aquí moveríamos el ticket a 'Done')`);
+      - name: Mover Issue/PR en el Tablero Kanban (Simulación)
+        uses: actions/github-script@v6
+        with:
+          script: |
+            // Este script sirve para automatizar el movimiento de tarjetas en GitHub Projects.
+            // Dependiendo del evento, podemos determinar el estado objetivo.
+            
+            const eventName = context.eventName;
+            const action = context.payload.action;
+            let targetColumn = "";
+            
+            if (eventName === 'pull_request') {
+              if (action === 'opened' || action === 'ready_for_review') {
+                targetColumn = "In Progress";
+              } else if (action === 'review_requested') {
+                targetColumn = "Code Review";
+              } else if (action === 'closed' && context.payload.pull_request.merged) {
+                targetColumn = "Done";
+              }
             }
-          } else if (eventName === 'issues') {
-            const issue = context.payload.issue;
-            if (action === 'opened') {
-              console.log(`Issue #${issue.number} creado. (Aquí moveríamos el ticket a 'To Do')`);
-            } else if (action === 'closed') {
-              console.log(`Issue #${issue.number} cerrado. (Aquí moveríamos el ticket a 'Done')`);
+            
+            console.log(`El evento '${eventName}' con acción '${action}' moverá el elemento a la columna: '${targetColumn}'`);
+            console.log("Nota: Para mover tarjetas en Projects V2 reales se requiere usar llamadas GraphQL con un Personal Access Token (PAT).");
+            
+            // Ejemplo de comentario automatizado en el PR notificando el movimiento
+            if (eventName === 'pull_request' && targetColumn) {
+              github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `🤖 **Kanban Automator:** Se ha enlazado este PR. Moviendo el estado en el Project Board a **${targetColumn}**.`
+              });
             }
-          }

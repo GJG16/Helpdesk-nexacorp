@@ -1,35 +1,43 @@
-name: CD Frontend Pages
+name: CD Frontend (GitHub Pages)
 
 on:
   push:
-    branches: [ main ]
-    paths:
-      - 'frontend/**'
+    branches: [ "main" ] # Se activa tras hacer push o mergear a main
+
+# Permisos necesarios para que GitHub Actions pueda publicar en la rama gh-pages
+permissions:
+  contents: write
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend
+
     steps:
-      - uses: actions/checkout@v4
-      
-      - name: Use Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18.x'
-          cache: 'npm'
-          cache-dependency-path: './frontend/package-lock.json'
-          
-      - name: Install dependencies
-        working-directory: ./frontend
-        run: npm install --legacy-peer-deps
-        
-      - name: Build Angular app
-        working-directory: ./frontend
-        # The base-href adjusts paths for GitHub Pages subfolder
-        run: npm run build -- --configuration production --base-href /${{ github.event.repository.name }}/
-        
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./frontend/dist/frontend/browser
+    - name: Checkout del código
+      uses: actions/checkout@v3
+
+    - name: Configurar Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+        cache-dependency-path: './frontend/package-lock.json'
+
+    - name: Instalar dependencias
+      run: npm install
+
+    - name: Compilar aplicación de Angular para Producción
+      # Asegúrate de configurar la base-href si tu repositorio no es la raíz del dominio
+      # Ejemplo: --base-href /nombre-del-repo/
+      run: npm run build -- --configuration production
+
+    - name: Desplegar en GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        # Cambia 'frontend' por el nombre de tu proyecto Angular que se genera dentro de dist/
+        publish_dir: ./frontend/dist/frontend
+        commit_message: "🚀 Despliegue automático a GitHub Pages"
