@@ -21,7 +21,7 @@ jobs:
     - name: Configurar Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '18.x'
+        node-version: '20.x'
 
     - name: Instalar dependencias
       run: npm install --legacy-peer-deps
@@ -34,5 +34,5 @@ jobs:
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        # Las versiones recientes de Angular guardan el build en una subcarpeta "browser"
-        publish_dir: ./frontend/dist/frontend/browser
+        # La salida del build de Angular en esta versión específica está en dist/frontend
+        publish_dir: ./frontend/dist/frontend
